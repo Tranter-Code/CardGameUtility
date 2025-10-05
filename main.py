@@ -69,29 +69,6 @@ class LifePointAppGUI(tk.Tk):
         self.show_main_screen()
         self.create_settings_tab()
 
-    def create_game_tab(self):
-        # Player 1
-        ttk.Label(self.game_tab, text="Player 1", font=("Arial", 14, "bold")).pack(pady=(10, 0))
-        ttk.Label(self.game_tab, textvariable=self.lp1_var, font=("Arial", 20)).pack()
-        p1_frame = ttk.Frame(self.game_tab)
-        p1_frame.pack(pady=5)
-
-        ttk.Button(p1_frame, text="Damage -", command=lambda: self.prompt_value(1, "damage")).pack(side="left", padx=2)
-        ttk.Button(p1_frame, text="Heal +", command=lambda: self.prompt_value(1, "heal")).pack(side="left", padx=2)
-        ttk.Button(p1_frame, text="Halve", command=lambda: self.halve_lp(1)).pack(side="left", padx=2)
-        ttk.Button(p1_frame, text="Reset", command=lambda: self.reset_lp(1)).pack(side="left", padx=2)
-
-        # Player 2
-        ttk.Label(self.game_tab, text="Player 2", font=("Arial", 14, "bold")).pack(pady=(15, 0))
-        ttk.Label(self.game_tab, textvariable=self.lp2_var, font=("Arial", 20)).pack()
-        p2_frame = ttk.Frame(self.game_tab)
-        p2_frame.pack(pady=5)
-
-        ttk.Button(p2_frame, text="Damage -", command=lambda: self.prompt_value(2, "damage")).pack(side="left", padx=2)
-        ttk.Button(p2_frame, text="Heal +", command=lambda: self.prompt_value(2, "heal")).pack(side="left", padx=2)
-        ttk.Button(p2_frame, text="Halve", command=lambda: self.halve_lp(2)).pack(side="left", padx=2)
-        ttk.Button(p2_frame, text="Reset", command=lambda: self.reset_lp(2)).pack(side="left", padx=2)
-
     def create_settings_tab(self):
         ttk.Label(self.settings_tab, text="Settings Coming Soon!", font=("Arial", 14)).pack(pady=20)
 
