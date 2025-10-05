@@ -1,6 +1,6 @@
 import os
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 
 class Player:
     def __init__(self, name, starting_lp):
@@ -30,10 +30,6 @@ class Game:
     def __init__(self):
         self.player1 = Player("Player 1", 8000)
         self.player2 = Player("Player 2", 8000)
-
-    def show_state(self):
-        print(self.player1)
-        print(self.player2)
 
     def get_player(self, number):
         if number == 1:
@@ -139,6 +135,10 @@ class LifePointAppGUI(tk.Tk):
     def show_main_screen(self):
         self.clear_game_tab()
 
+        top_frame = ttk.Frame(self.game_tab)
+        top_frame.pack(pady=(10, 5))
+        ttk.Button(top_frame, text="Reset", command=self.reset_all_lp).pack()
+
         ttk.Label(self.game_tab, text="Player 1", font=("Arial", 14, "bold")).pack(pady=(10, 0))
         ttk.Label(self.game_tab, textvariable=self.lp1_var, font=("Arial", 20)).pack()
         p1_frame = ttk.Frame(self.game_tab)
@@ -147,7 +147,6 @@ class LifePointAppGUI(tk.Tk):
         ttk.Button(p1_frame, text="Damage -", command=lambda: self.show_calc_screen(1, "damage")).pack(side="left", padx=2)
         ttk.Button(p1_frame, text="Heal +", command=lambda: self.show_calc_screen(1, "heal")).pack(side="left", padx=2)
         ttk.Button(p1_frame, text="Halve", command=lambda: self.halve_lp(1)).pack(side="left", padx=2)
-        ttk.Button(p1_frame, text="Reset", command=lambda: self.reset_lp(1)).pack(side="left", padx=2)
 
         ttk.Label(self.game_tab, text="Player 2", font=("Arial", 14, "bold")).pack(pady=(15, 0))
         ttk.Label(self.game_tab, textvariable=self.lp2_var, font=("Arial", 20)).pack()
@@ -157,7 +156,6 @@ class LifePointAppGUI(tk.Tk):
         ttk.Button(p2_frame, text="Damage -", command=lambda: self.show_calc_screen(2, "damage")).pack(side="left", padx=2)
         ttk.Button(p2_frame, text="Heal +", command=lambda: self.show_calc_screen(2, "heal")).pack(side="left", padx=2)
         ttk.Button(p2_frame, text="Halve", command=lambda: self.halve_lp(2)).pack(side="left", padx=2)
-        ttk.Button(p2_frame, text="Reset", command=lambda: self.reset_lp(2)).pack(side="left", padx=2)
 
 
     def change_lp(self, player_num, delta):
@@ -173,10 +171,12 @@ class LifePointAppGUI(tk.Tk):
         player.halve_lp()
         self.update_display()
 
-    def reset_lp(self, player_num):
-        player = self.game.player1 if player_num == 1 else self.game.player2
-        player.reset_lp()
-        self.update_display()
+    def reset_all_lp(self):
+        confirm = messagebox.askyesno("Confirm Reset", "Reset both players' Life Points to 8000?")
+        if confirm:
+            self.game.player1.reset_lp()
+            self.game.player2.reset_lp()
+            self.update_display()
 
     def update_display(self):
         self.lp1_var.set(str(self.game.player1.lp))
