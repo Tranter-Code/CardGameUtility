@@ -3,7 +3,7 @@ import tkinter as tk
 from tkinter import ttk
 
 class Player:
-    def __init__(self, name, starting_lp=8000):
+    def __init__(self, name, starting_lp):
         self.name = name
         self.lp = starting_lp
     
@@ -28,8 +28,8 @@ class Player:
     
 class Game:
     def __init__(self):
-        self.player1 = Player("Player 1")
-        self.player2 = Player("Player 2")
+        self.player1 = Player("Player 1", 8000)
+        self.player2 = Player("Player 2", 8000)
 
     def show_state(self):
         print(self.player1)
@@ -50,7 +50,7 @@ class LifePointAppGUI(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Life Point Tracker")
-        self.geometry("400x300")
+        self.geometry("500x300")
         self.resizable(False, False)
 
         self.game = Game()
@@ -62,6 +62,10 @@ class LifePointAppGUI(tk.Tk):
         notebook.add(self.game_tab, text="Game")
         notebook.add(self.settings_tab, text="Settings")
         notebook.pack(expand=True, fill='both')
+        
+        def on_tab_change(event):
+            self.update_idletasks()
+        notebook.bind("<<NotebookTabChanged>>", on_tab_change)
 
         self.create_game_tab()
         self.create_settings_tab()
@@ -114,6 +118,7 @@ class LifePointAppGUI(tk.Tk):
     def update_display(self):
         self.lp1_var.set(str(self.game.player1.lp))
         self.lp2_var.set(str(self.game.player2.lp))
+        
         
 
 def main():
