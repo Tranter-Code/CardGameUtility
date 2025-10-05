@@ -1,4 +1,6 @@
 import os
+import tkinter as tk
+from tkinter import ttk
 
 class Player:
     def __init__(self, name, starting_lp=8000):
@@ -44,6 +46,76 @@ class Game:
 def clear_console():
     os.system("cls" if os.name == "nt" else "clear")
 
+class LifePointAppGUI(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("Life Point Tracker")
+        self.geometry("400x300")
+        self.resizable(False, False)
+
+        self.game = Game()
+        
+        #Tabs
+        notebook = ttk.Notebook(self)
+        self.game_tab = ttk.Frame(notebook)
+        self.settings_tab = ttk.Frame(notebook)
+        notebook.add(self.game_tab, text="Game")
+        notebook.add(self.settings_tab, text="Settings")
+        notebook.pack(expand=True, fill='both')
+
+        self.create_game_tab()
+        self.create_settings_tab()
+
+    def create_game_tab(self):
+        self.lp1_var = tk.StringVar(value=str(self.game.player1.lp))
+        self.lp2_var = tk.StringVar(value=str(self.game.player2.lp))
+
+        ttk.Label(self.game_tab, text="Player 1", font=("Arial", 14, "bold")).pack(pady=(10, 0))
+        ttk.Label(self.game_tab, textvariable=self.lp1_var, font=("Arial", 20)).pack()
+
+        p1_frame = ttk.Frame(self.game_tab)
+        p1_frame.pack(pady=5)
+        ttk.Button(p1_frame, text="Damage -", command=lambda: self.change_lp(1, -500)).pack(side="left", padx=2)
+        ttk.Button(p1_frame, text="Heal +", command=lambda: self.change_lp(1, 500)).pack(side="left", padx=2)
+        ttk.Button(p1_frame, text="Halve", command=lambda: self.halve_lp(1)).pack(side="left", padx=2)
+        ttk.Button(p1_frame, text="Reset", command=lambda: self.reset_lp(1)).pack(side="left", padx=2)
+
+        ttk.Label(self.game_tab, text="Player 2", font=("Arial", 14, "bold")).pack(pady=(10, 0))
+        ttk.Label(self.game_tab, textvariable=self.lp2_var, font=("Arial", 20)).pack()
+
+        p2_frame = ttk.Frame(self.game_tab)
+        p2_frame.pack(pady=5)
+        ttk.Button(p2_frame, text="Damage -", command=lambda: self.change_lp(2, -500)).pack(side="left", padx=2)
+        ttk.Button(p2_frame, text="Heal +", command=lambda: self.change_lp(2, 500)).pack(side="left", padx=2)
+        ttk.Button(p2_frame, text="Halve", command=lambda: self.halve_lp(2)).pack(side="left", padx=2)
+        ttk.Button(p2_frame, text="Reset", command=lambda: self.reset_lp(2)).pack(side="left", padx=2)
+
+    def create_settings_tab(self):
+        ttk.Label(self.settings_tab, text="Settings Coming Soon!", font=("Arial", 14)).pack(pady=20)
+
+    def change_lp(self, player_num, delta):
+        player = self.game.player1 if player_num == 1 else self.game.player2
+        if delta < 0:
+            player.damage(abs(delta))
+        else:
+            player.heal(delta)
+        self.update_display()
+
+    def halve_lp(self, player_num):
+        player = self.game.player1 if player_num == 1 else self.game.player2
+        player.halve_lp()
+        self.update_display()
+
+    def reset_lp(self, player_num):
+        player = self.game.player1 if player_num == 1 else self.game.player2
+        player.reset_lp()
+        self.update_display()
+
+    def update_display(self):
+        self.lp1_var.set(str(self.game.player1.lp))
+        self.lp2_var.set(str(self.game.player2.lp))
+        
+
 def main():
     # For now, just test in console
     game = Game()
@@ -88,4 +160,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    app = LifePointAppGUI()
+    app.mainloop()
