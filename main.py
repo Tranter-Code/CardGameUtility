@@ -144,7 +144,7 @@ class LifePointAppGUI(tk.Tk):
         # LP entry
         ttk.Label(popup, text="Starting Life Points:").pack()
         lp_entry = ttk.Entry(popup, width=20)
-        lp_entry.insert(0, str(self.game.player1.lp))  # show current LP
+        lp_entry.insert(0, str(self.game.starting_lp))
         lp_entry.pack(pady=5)
 
         def save_lp():
@@ -166,7 +166,6 @@ class LifePointAppGUI(tk.Tk):
         ttk.Button(popup, text="Save", command=save_lp).pack(pady=15)
 
         popup.bind("<Return>", lambda e: save_lp())
-
 
     def show_calc_screen(self, player_num, action):
         self.clear_game_tab()
@@ -207,16 +206,20 @@ class LifePointAppGUI(tk.Tk):
 
     def change_lp(self, player_num, delta):
         player = self.game.player1 if player_num == 1 else self.game.player2
+        old_value = player.lp
         if delta < 0:
             player.damage(abs(delta))
         else:
             player.heal(delta)
-        self.update_display()
+        new_value = player.lp
+        self.animate_lp_change(player_num, old_value, new_value)
 
     def halve_lp(self, player_num):
         player = self.game.player1 if player_num == 1 else self.game.player2
+        old_value = player.lp
         player.halve_lp()
-        self.update_display()
+        new_value = player.lp
+        self.animate_lp_change(player_num, old_value, new_value)
 
     def reset_all_lp(self):
         confirm = messagebox.askyesno("Confirm Reset", f"Reset both players' Life Points to {self.game.starting_lp}?")
@@ -229,6 +232,31 @@ class LifePointAppGUI(tk.Tk):
         self.lp1_var.set(str(self.game.player1.lp))
         self.lp2_var.set(str(self.game.player2.lp))
     
+    def animate_lp_change(self, player_num: int, old_value: int, new_value: int, duration: int = 1300):
+        steps = 60  # smoothness (frames)
+        delay = duration // steps
+        delta = (new_value - old_value) / steps
+        current = old_value
+        count = 0
+
+        def update_step():
+            nonlocal current, count
+            if count < steps:
+                current += delta
+                display_value = int(round(current))
+                if player_num == 1:
+                    self.lp1_var.set(str(display_value))
+                else:
+                    self.lp2_var.set(str(display_value))
+                count += 1
+                self.after(delay, update_step)
+            else:
+                if player_num == 1:
+                    self.lp1_var.set(str(new_value))
+                else:
+                    self.lp2_var.set(str(new_value))
+
+        update_step()
 
 if __name__ == "__main__":
     app = LifePointAppGUI()
