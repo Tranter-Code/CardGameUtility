@@ -9,27 +9,24 @@ class Player:
     
     def damage(self, value):
         self.lp = max(0, self.lp - value)
-        clear_console()
     
     def heal(self, value):
         self.lp += value
-        clear_console()
 
     def halve_lp(self):
         self.lp //= 2
-        clear_console()
 
-    def reset_lp(self, starting_lp=8000):
-        self.lp = starting_lp
-        clear_console()
+    def reset_lp(self, default_lp):
+        self.lp = default_lp
     
     def __str__(self):
         return  f"{self.name}: {self.lp}"
     
 class Game:
-    def __init__(self):
-        self.player1 = Player("Player 1", 8000)
-        self.player2 = Player("Player 2", 8000)
+    def __init__(self, starting_lp=8000):
+        self.starting_lp = starting_lp
+        self.player1 = Player("Player 1", starting_lp)
+        self.player2 = Player("Player 2", starting_lp)
 
     def get_player(self, number):
         if number == 1:
@@ -38,9 +35,6 @@ class Game:
             return self.player2
         else:
             return None
-
-def clear_console():
-    os.system("cls" if os.name == "nt" else "clear")
 
 class LifePointAppGUI(tk.Tk):
     def __init__(self):
@@ -68,9 +62,111 @@ class LifePointAppGUI(tk.Tk):
 
         self.show_main_screen()
         self.create_settings_tab()
+        self.focus_force()
+
+    def show_main_screen(self):
+        self.clear_game_tab()
+
+        top_frame = ttk.Frame(self.game_tab)
+        top_frame.pack(pady=(10, 5))
+        ttk.Button(top_frame, text="Reset", command=self.reset_all_lp).pack()
+
+        ttk.Label(self.game_tab, text=self.game.player1.name, font=("Arial", 14, "bold")).pack(pady=(10, 0))
+        ttk.Label(self.game_tab, textvariable=self.lp1_var, font=("Arial", 20)).pack()
+        p1_frame = ttk.Frame(self.game_tab)
+        p1_frame.pack(pady=5)
+
+        ttk.Button(p1_frame, text="Damage -", command=lambda: self.show_calc_screen(1, "damage")).pack(side="left", padx=2)
+        ttk.Button(p1_frame, text="Heal +", command=lambda: self.show_calc_screen(1, "heal")).pack(side="left", padx=2)
+        ttk.Button(p1_frame, text="Halve", command=lambda: self.halve_lp(1)).pack(side="left", padx=2)
+
+        ttk.Label(self.game_tab, text=self.game.player2.name, font=("Arial", 14, "bold")).pack(pady=(15, 0))
+        ttk.Label(self.game_tab, textvariable=self.lp2_var, font=("Arial", 20)).pack()
+        p2_frame = ttk.Frame(self.game_tab)
+        p2_frame.pack(pady=5)
+
+        ttk.Button(p2_frame, text="Damage -", command=lambda: self.show_calc_screen(2, "damage")).pack(side="left", padx=2)
+        ttk.Button(p2_frame, text="Heal +", command=lambda: self.show_calc_screen(2, "heal")).pack(side="left", padx=2)
+        ttk.Button(p2_frame, text="Halve", command=lambda: self.halve_lp(2)).pack(side="left", padx=2)
 
     def create_settings_tab(self):
-        ttk.Label(self.settings_tab, text="Settings Coming Soon!", font=("Arial", 14)).pack(pady=20)
+        for widget in self.settings_tab.winfo_children():
+            widget.destroy()
+
+        ttk.Label(self.settings_tab, text="Settings", font=("Arial", 16, "bold")).pack(pady=(10, 15))
+
+        ttk.Button(self.settings_tab, text="Change Player Names", command=self.open_name_editor).pack(pady=20)
+
+        ttk.Button(self.settings_tab, text="Change Starting Life Points", command=self.open_starting_lp_editor).pack(pady=10)
+
+    def open_name_editor(self):
+        popup = tk.Toplevel(self)
+        popup.title("Edit Player Names")
+        popup.geometry("300x210")
+        popup.resizable(False, False)
+        popup.grab_set()  # makes the window modal (focus lock)
+
+        ttk.Label(popup, text="Edit Player Names", font=("Arial", 14, "bold")).pack(pady=10)
+
+        # Entry for Player 1
+        ttk.Label(popup, text="Player 1 Name:").pack()
+        p1_entry = ttk.Entry(popup, width=25)
+        p1_entry.insert(0, self.game.player1.name)  # pre-fill current name
+        p1_entry.pack(pady=5)
+
+        # Entry for Player 2
+        ttk.Label(popup, text="Player 2 Name:").pack()
+        p2_entry = ttk.Entry(popup, width=25)
+        p2_entry.insert(0, self.game.player2.name)
+        p2_entry.pack(pady=5)
+
+        def save_names():
+            name1 = p1_entry.get().strip() or "Player 1"
+            name2 = p2_entry.get().strip() or "Player 2"
+            self.game.player1.name = name1
+            self.game.player2.name = name2
+            self.show_main_screen()
+            popup.destroy()
+
+        ttk.Button(popup, text="Save", command=save_names).pack(pady=15)
+
+        popup.bind("<Return>", lambda e: save_names())
+
+    def open_starting_lp_editor(self):
+        popup = tk.Toplevel(self)
+        popup.title("Edit Starting Life Points")
+        popup.geometry("300x180")
+        popup.resizable(False, False)
+        popup.grab_set()  # make window modal
+
+        ttk.Label(popup, text="Change Starting LP", font=("Arial", 14, "bold")).pack(pady=10)
+
+        # LP entry
+        ttk.Label(popup, text="Starting Life Points:").pack()
+        lp_entry = ttk.Entry(popup, width=20)
+        lp_entry.insert(0, str(self.game.player1.lp))  # show current LP
+        lp_entry.pack(pady=5)
+
+        def save_lp():
+            try:
+                new_lp = int(lp_entry.get())
+                if new_lp <= 0:
+                    raise ValueError
+
+                # Update both players and refresh UI
+                self.game.starting_lp = new_lp
+                self.game.player1.reset_lp(new_lp)
+                self.game.player2.reset_lp(new_lp)
+                self.update_display()
+                popup.destroy()
+            except ValueError:
+                lp_entry.delete(0, tk.END)
+                lp_entry.insert(0, "Invalid")
+
+        ttk.Button(popup, text="Save", command=save_lp).pack(pady=15)
+
+        popup.bind("<Return>", lambda e: save_lp())
+
 
     def show_calc_screen(self, player_num, action):
         self.clear_game_tab()
@@ -108,32 +204,6 @@ class LifePointAppGUI(tk.Tk):
     def clear_game_tab(self):
         for widget in self.game_tab.winfo_children():
             widget.destroy()
-    
-    def show_main_screen(self):
-        self.clear_game_tab()
-
-        top_frame = ttk.Frame(self.game_tab)
-        top_frame.pack(pady=(10, 5))
-        ttk.Button(top_frame, text="Reset", command=self.reset_all_lp).pack()
-
-        ttk.Label(self.game_tab, text="Player 1", font=("Arial", 14, "bold")).pack(pady=(10, 0))
-        ttk.Label(self.game_tab, textvariable=self.lp1_var, font=("Arial", 20)).pack()
-        p1_frame = ttk.Frame(self.game_tab)
-        p1_frame.pack(pady=5)
-
-        ttk.Button(p1_frame, text="Damage -", command=lambda: self.show_calc_screen(1, "damage")).pack(side="left", padx=2)
-        ttk.Button(p1_frame, text="Heal +", command=lambda: self.show_calc_screen(1, "heal")).pack(side="left", padx=2)
-        ttk.Button(p1_frame, text="Halve", command=lambda: self.halve_lp(1)).pack(side="left", padx=2)
-
-        ttk.Label(self.game_tab, text="Player 2", font=("Arial", 14, "bold")).pack(pady=(15, 0))
-        ttk.Label(self.game_tab, textvariable=self.lp2_var, font=("Arial", 20)).pack()
-        p2_frame = ttk.Frame(self.game_tab)
-        p2_frame.pack(pady=5)
-
-        ttk.Button(p2_frame, text="Damage -", command=lambda: self.show_calc_screen(2, "damage")).pack(side="left", padx=2)
-        ttk.Button(p2_frame, text="Heal +", command=lambda: self.show_calc_screen(2, "heal")).pack(side="left", padx=2)
-        ttk.Button(p2_frame, text="Halve", command=lambda: self.halve_lp(2)).pack(side="left", padx=2)
-
 
     def change_lp(self, player_num, delta):
         player = self.game.player1 if player_num == 1 else self.game.player2
@@ -149,60 +219,16 @@ class LifePointAppGUI(tk.Tk):
         self.update_display()
 
     def reset_all_lp(self):
-        confirm = messagebox.askyesno("Confirm Reset", "Reset both players' Life Points to 8000?")
+        confirm = messagebox.askyesno("Confirm Reset", f"Reset both players' Life Points to {self.game.starting_lp}?")
         if confirm:
-            self.game.player1.reset_lp()
-            self.game.player2.reset_lp()
+            self.game.player1.reset_lp(self.game.starting_lp)
+            self.game.player2.reset_lp(self.game.starting_lp)
             self.update_display()
 
     def update_display(self):
         self.lp1_var.set(str(self.game.player1.lp))
         self.lp2_var.set(str(self.game.player2.lp))
-        
-        
-
-def main():
-    # For now, just test in console
-    game = Game()
-    while True:
-        print("\n--- Life Point Tracker ---")
-        game.show_state()
-        print("\nChoose an action:")
-        print("1. Damage")
-        print("2. Heal")
-        print("3. Halve LP")
-        print("4. Reset LP")
-        print("5. Show State")
-        print("0. Quit")
-
-        choice = input("Action: ")
-        if choice == "0":
-            break
-        elif choice in ["1", "2", "3", "4"]:
-            player_num = int(input("Which player? (1 or 2): "))
-            player = game.get_player(player_num)
-            if not player:
-                print("Invalid player.")
-                continue
-            
-            if choice == "1":  # Damage
-                value = int(input("Damage value: "))
-                player.damage(value)
-            elif choice == "2":  # Heal
-                value = int(input("Heal value: "))
-                player.heal(value)
-            elif choice == "3":  # Halve
-                player.halve_lp()
-            elif choice == "4":  # Reset
-                player.reset_lp()
-        
-        
-        elif choice == "5":
-            game.show_state()
-        else:
-            print("Invalid choice. Try again.")
     
-
 
 if __name__ == "__main__":
     app = LifePointAppGUI()
