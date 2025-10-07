@@ -1,6 +1,8 @@
 import os
 import tkinter as tk
 from tkinter import ttk, messagebox
+import pygame
+import threading
 
 class Player:
     def __init__(self, name, starting_lp):
@@ -42,6 +44,12 @@ class LifePointAppGUI(tk.Tk):
         self.title("Life Point Tracker")
         self.geometry("500x300")
         self.resizable(False, False)
+
+        pygame.mixer.init()
+        self.lp_count_sound = pygame.mixer.Sound("assets/sounds/LP_counting.wav")
+        self.lp_end_sound = pygame.mixer.Sound("assets/sounds/LP_updated.wav")
+        self.lp_count_sound.set_volume(0.3)
+        self.lp_end_sound.set_volume(0.3)   
 
         self.game = Game()
 
@@ -239,6 +247,8 @@ class LifePointAppGUI(tk.Tk):
         current = old_value
         count = 0
 
+        threading.Thread(target=lambda: self.lp_count_sound.play()).start()
+
         def update_step():
             nonlocal current, count
             if count < steps:
@@ -255,8 +265,9 @@ class LifePointAppGUI(tk.Tk):
                     self.lp1_var.set(str(new_value))
                 else:
                     self.lp2_var.set(str(new_value))
+                threading.Thread(target=lambda: self.lp_end_sound.play()).start()
 
-        update_step()
+        self.after(100, update_step())
 
 if __name__ == "__main__":
     app = LifePointAppGUI()
