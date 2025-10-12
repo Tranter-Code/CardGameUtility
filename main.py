@@ -270,6 +270,35 @@ class LifePointAppGUI(tk.Tk): # GUI app.
 
         self.after(100, update_step()) #wait specified ms delay and then start animation
 
+    def load_sound_theme(self, theme_name: str, overrides: dict | None = None):
+        """Load a sound theme, optionally mixing custom overrides."""
+
+        base_path = os.path.join("sounds", theme_name)
+        self.sounds = {}
+
+        def load_sound(filename, folder=base_path):
+            path = os.path.join(folder, filename)
+            if os.path.exists(path):
+                sound = pygame.mixer.Sound(path)
+                sound.set_volume(0.5)
+                return sound
+            return None
+
+        # Default sounds for the theme
+        for key in ["lp_count", "lp_end", "damage", "heal", "halve"]:
+            self.sounds[key] = load_sound(f"{key}.wav")
+
+        # Apply overrides if provided (Custom theme)
+        if overrides:
+            for key, (override_theme, file_name) in overrides.items():
+                override_path = os.path.join("sounds", override_theme, file_name)
+                if os.path.exists(override_path):
+                    self.sounds[key] = pygame.mixer.Sound(override_path)
+                    self.sounds[key].set_volume(0.5)
+
+        self.current_theme = theme_name
+        self.current_overrides = overrides or {}
+        
 if __name__ == "__main__": 
     app = LifePointAppGUI() #create and run the GUI app
     app.mainloop() #start the main event loop
