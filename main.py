@@ -5,27 +5,16 @@ import json
 import pygame 
 import threading 
 from Player import *
+from Game import *
 
 CONFIG_FILE = 'config.json'
-    
-class Game: #Game object for two player objects that are playing together, with a starting lifepoint value for both players defaulted to 8000.
-    def __init__(self, starting_lp):
-        self.starting_lp = starting_lp
-        self.player1 = Player("Player 1", starting_lp) #create player 1 object
-        self.player2 = Player("Player 2", starting_lp) #create player 2 object
-
-    def get_player(self, number): #return either player 1 or 2 object depending on given number
-        if number == 1:
-            return self.player1
-        elif number == 2:
-            return self.player2
-        else:
-            return None
 
 class LifePointAppGUI(tk.Tk): # GUI app.
     def __init__(self):
         super().__init__()
+        self.iconphoto(False, tk.PhotoImage(file="assets/icons/icon.png"))
         self.settings = self.load_settings() #load settings from config file
+        self.current_overrides = self.settings.get("sound_paths", {})  # For custom theme sound overrides
         self.current_theme = self.settings["theme"] #default theme
         self.title(f"Life Point Tracker — Theme: {self.current_theme}") #set title for top of window
         self.geometry("500x300") #set dimensions of window
@@ -40,7 +29,7 @@ class LifePointAppGUI(tk.Tk): # GUI app.
             "5DS": "5ds",
             "Zexal": "zexal",
             "Arc-V": "arcv",
-            "Vrains": "vrains"
+            "Vrains": "vrains",
         }
         self.load_theme(self.current_theme)
 
@@ -96,31 +85,54 @@ class LifePointAppGUI(tk.Tk): # GUI app.
         ttk.Button(p2_frame, text="Heal +", command=lambda: self.show_calc_screen(2, "heal")).pack(side="left", padx=2) #create heal button for player 2
         ttk.Button(p2_frame, text="Halve", command=lambda: self.halve_lp(2)).pack(side="left", padx=2) #create halve button for player 2
 
-    def create_settings_tab(self): #draw the settings tab on the window
-        for widget in self.settings_tab.winfo_children(): 
+    def create_settings_tab(self):
+        # Clear existing widgets
+        for widget in self.settings_tab.winfo_children():
             widget.destroy()
 
-        ttk.Label(self.settings_tab, text="Settings", font=("Arial", 16, "bold")).pack(pady=(10, 15)) #create settings label
+        ttk.Label(self.settings_tab, text="Settings", font=("Arial", 16, "bold")).pack(pady=(10, 15))
 
-        ttk.Button(self.settings_tab, text="Change Player Names", command=self.open_name_editor).pack(pady=20) #create button to change player names
+        # Buttons for player names and LP
+        ttk.Button(self.settings_tab, text="Change Player Names", command=self.open_name_editor).pack(pady=10)
+        ttk.Button(self.settings_tab, text="Change Starting Life Points", command=self.open_starting_lp_editor).pack(pady=5)
 
-        ttk.Button(self.settings_tab, text="Change Starting Life Points", command=self.open_starting_lp_editor).pack(pady=10) #create button to change starting lifepoints
+        # --- THEME SELECTION SECTION ---
+        ttk.Label(self.settings_tab, text="Select Sound Theme:").pack(pady=(20, 5))
 
+        frame = ttk.Frame(self.settings_tab)
+        frame.pack(pady=5)
+
+        # Dropdown of themes
         self.theme_var = tk.StringVar(value=self.current_theme)
+        theme_selector = ttk.Combobox(
+            frame,
+            textvariable=self.theme_var,
+            values=list(self.theme_map.keys()),
+            state="readonly",
+            width=20
+        )
+        theme_selector.pack(side="left", padx=(0, 10))
 
-        theme_selector = ttk.Combobox(self.settings_tab, textvariable=self.theme_var, values=list(self.theme_map.keys()), state="readonly")
-        theme_selector.pack(pady=5)
+        # "Customize..." button next to dropdown
+        ttk.Button(frame, text="Customize...", command=self.open_custom_theme_editor).pack(side="left")
 
+        # When a theme is selected
         def on_theme_change(event=None):
             selected = self.theme_var.get()
-            if selected == "Custom":
-                self.open_custom_theme_editor()
-            else:
-                self.load_theme(selected)
-                self.current_theme = selected
-                self.save_settings()
-                self.title(f"Life Point Tracker — Theme: {selected}")
-                self.refresh_sound.play() #play refresh sound effect
+            self.load_theme(selected)
+            self.current_theme = selected
+            self.save_settings()
+            self.settings = self.load_settings() #load settings from config file
+            self.current_overrides = self.settings.get("sound_paths", {})  # For custom theme sound overrides
+            self.title(f"Life Point Tracker — Theme: {selected}")
+
+
+            # Optional: play refresh sound if available
+            if hasattr(self, "refresh_sound") and self.refresh_sound:
+                try:
+                    self.refresh_sound.play()
+                except Exception:
+                    pass
 
         theme_selector.bind("<<ComboboxSelected>>", on_theme_change)
 
@@ -191,6 +203,75 @@ class LifePointAppGUI(tk.Tk): # GUI app.
 
         ttk.Button(popup, text="Save", command=save_lp).pack(pady=15) #create save button
         popup.bind("<Return>", lambda e: save_lp()) #make enter key save lifepoint value
+
+    def open_custom_theme_editor(self):
+        """Popup for selecting per-sound themes."""
+        popup = tk.Toplevel(self)
+        popup.title("Customize Sound Theme")
+        popup.geometry("400x270")
+        popup.resizable(False, False)
+        popup.grab_set()
+
+        ttk.Label(popup, text="Customize Sound Theme", font=("Arial", 14, "bold")).pack(pady=10)
+
+        # Define sound categories
+        sound_paths = self.settings.get("sound_paths", {})
+
+        # Create a reversed version of theme_map for lookup: folder_name -> display_name
+        reverse_theme_map = {v: k for k, v in self.theme_map.items()}
+
+        sound_keys = ["LP_counting", "LP_updated", "LP_empty", "Refresh"]
+        available_themes = list(self.theme_map.keys())  # No "Custom" here
+
+        selections = {}
+
+        for key in sound_keys:
+            frame = ttk.Frame(popup)
+            frame.pack(pady=5)
+            ttk.Label(frame, text=key.replace("_", " ").title() + ":").pack(side="left", padx=5)
+
+            # Get current folder (e.g. "gx") and convert it to the display name (e.g. "GX")
+            folder_value = sound_paths.get(key, "basic")
+            current_theme = reverse_theme_map.get(folder_value, "Basic")
+            var = tk.StringVar(value=current_theme)
+            combo = ttk.Combobox(frame, textvariable=var, values=available_themes, state="readonly", width=15)
+            combo.pack(side="left")
+            selections[key] = var
+
+        # Save the custom theme
+        def save_custom_theme():
+            # Create a new dictionary of sound paths
+            new_sound_paths = {}
+
+            for key, var in selections.items():
+                display_name = var.get()  # e.g. "GX"
+                folder_name = self.theme_map.get(display_name, "basic")  # e.g. "gx"
+                new_sound_paths[key] = folder_name  # save lowercase folder for JSON
+
+            # Update settings
+            self.settings["theme"] = "Custom"
+            self.settings["sound_paths"] = new_sound_paths
+            self.current_overrides = new_sound_paths
+            self.current_theme = "Custom"
+
+            
+            self.save_settings() # Save to JSON
+            self.load_theme("Custom") # Reload custom theme immediately
+
+            # Update title and dropdown
+            self.title("Life Point Tracker — Theme: Custom")
+            if hasattr(self, "theme_var"):
+                self.theme_var.set("Custom")  # 🔥 This updates the dropdown immediately
+
+            # Feedback and sound
+            try:
+                self.refresh_sound.play()
+            except Exception:
+                pass
+
+            popup.destroy()
+
+        ttk.Button(popup, text="Save Custom Theme", command=save_custom_theme).pack(pady=20)
 
     def show_calc_screen(self, player_num, action): #draw the calculation screen for damage/heal input
         self.clear_game_tab() #clear the game tab
@@ -292,47 +373,85 @@ class LifePointAppGUI(tk.Tk): # GUI app.
 
         self.after(100, update_step()) #wait specified ms delay and then start animation
 
-    def load_theme(self, theme_name: str): 
-        folder_name = self.theme_map.get(theme_name, theme_name.lower())
-        base_path = os.path.join('assets', 'sounds', folder_name) #base path for theme assets
-        self.lp_count_sound = pygame.mixer.Sound(os.path.join(base_path, "LP_counting.wav")) #load sound effect - counting lp
-        self.lp_end_sound = pygame.mixer.Sound(os.path.join(base_path, "LP_updated.wav")) #load sound effect - updated lp
-        self.lp_empty_sound = pygame.mixer.Sound(os.path.join(base_path, "LP_empty.wav")) #load sound effect - lp empty
-        self.refresh_sound = pygame.mixer.Sound(os.path.join(base_path, "Refresh.wav")) #load sound effect - refresh
+    def load_sound_effect(self, file_name: str, folder_name: str):
+        path = os.path.join('assets', 'sounds', folder_name, file_name)
+        try:
+            sound = pygame.mixer.Sound(path)
+            sound.set_volume(0.5)  # Set a default volume
+            return sound
+        except Exception as e:
+            print(f"⚠️ Error loading sound '{file_name}' from '{folder_name}': {e}")
+            return None
+        
+    def load_theme(self, theme_name: str):
+        theme_keys = self.theme_map
+        if theme_name == "Custom":
+            sound_paths = self.settings.get("sound_paths", {})
 
-        self.lp_count_sound.set_volume(0.5) #set volume for counting sound effect
-        self.lp_end_sound.set_volume(0.5)   #set volume for updated sound effect
-        self.lp_empty_sound.set_volume(0.5) #set volume for lp empty sound effect
-        self.refresh_sound.set_volume(0.5)  #set volume for refresh sound effect
+            self.lp_count_sound = self.load_sound_effect("LP_counting.wav", sound_paths.get("LP_counting"))
+            self.lp_end_sound = self.load_sound_effect("LP_updated.wav", sound_paths.get("LP_updated"))
+            self.lp_empty_sound = self.load_sound_effect("LP_empty.wav", sound_paths.get("LP_empty"))
+            self.refresh_sound = self.load_sound_effect("Refresh.wav", sound_paths.get("Refresh"))
+        else:
+            self.lp_count_sound = self.load_sound_effect("LP_counting.wav", theme_keys.get(theme_name, theme_name.lower()))
+            self.lp_end_sound = self.load_sound_effect("LP_updated.wav", theme_keys.get(theme_name, theme_name.lower()))
+            self.lp_empty_sound = self.load_sound_effect("LP_empty.wav", theme_keys.get(theme_name, theme_name.lower()))
+            self.refresh_sound = self.load_sound_effect("Refresh.wav", theme_keys.get(theme_name, theme_name.lower()))
 
     def load_settings(self):
         if os.path.exists(CONFIG_FILE):
             try:
                 with open(CONFIG_FILE, "r") as f:
                     data = json.load(f)
-                return data
             except Exception as e:
                 print(f"⚠️ Error reading settings file: {e}")
-        # Default values if settings file doesn’t exist or fails
-        return {
-            "player1_name": "Player 1",
-            "player2_name": "Player 2",
-            "starting_lp": 8000,
-            "theme": "Basic"
-        }
+                data = {}
+        else:
+            data = {}
+
+        # Apply defaults if missing
+        data.setdefault("player1_name", "Player 1")
+        data.setdefault("player2_name", "Player 2")
+        data.setdefault("starting_lp", 8000)
+        data.setdefault("theme", "Basic")
+        data.setdefault("sound_paths", {
+            "LP_counting": "basic",
+            "LP_updated": "basic",
+            "LP_empty": "basic",
+            "Refresh": "basic"
+        })
+
+        return data
 
     def save_settings(self):
+        """Save player data, theme, and per-sound folder mappings."""
+        # Always save folder names for each sound effect
+        if self.current_theme == "Custom":
+            sound_paths = self.current_overrides.copy()
+        else:
+            folder_name = self.theme_map.get(self.current_theme, self.current_theme.lower())
+            sound_paths = {
+                "LP_counting": folder_name,
+                "LP_updated": folder_name,
+                "LP_empty": folder_name,
+                "Refresh": folder_name
+            }
+
         data = {
             "player1_name": self.game.player1.name,
             "player2_name": self.game.player2.name,
             "starting_lp": self.game.starting_lp,
-            "theme": self.current_theme
+            "theme": self.current_theme,
+            "sound_paths": sound_paths
         }
+
         try:
             with open(CONFIG_FILE, "w") as f:
                 json.dump(data, f, indent=4)
+            print("✅ Settings saved successfully.")
         except Exception as e:
             print(f"⚠️ Error saving settings: {e}")
+    
 
         
 

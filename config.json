@@ -1,6 +1,12 @@
 {
-    "player1_name": "Dave",
-    "player2_name": "Bob",
-    "starting_lp": 8000,
-    "theme": "5DS"
+    "player1_name": "Player 1",
+    "player2_name": "Player 2",
+    "starting_lp": 4000,
+    "theme": "Custom",
+    "sound_paths": {
+        "LP_counting": "gx",
+        "LP_updated": "gx",
+        "LP_empty": "5ds",
+        "Refresh": "vrains"
+    }
 }
