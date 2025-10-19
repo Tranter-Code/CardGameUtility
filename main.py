@@ -453,9 +453,6 @@ class LifePointAppGUI(tk.Tk): # GUI app.
             print(f"⚠️ Error saving settings: {e}")
     
 
-        
-
-
 if __name__ == "__main__": 
     app = LifePointAppGUI() #create and run the GUI app
     app.mainloop() #start the main event loop
