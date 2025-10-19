@@ -1,2 +1,2 @@
-# YuGiOh-LifePoints-Tracker
+# LifePoints-Tracker
 
