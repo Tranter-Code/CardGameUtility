@@ -1,12 +1,12 @@
 {
     "player1_name": "Player 1",
     "player2_name": "Player 2",
-    "starting_lp": 4000,
-    "theme": "Custom",
+    "starting_lp": 8000,
+    "theme": "Basic",
     "sound_paths": {
-        "LP_counting": "gx",
-        "LP_updated": "gx",
-        "LP_empty": "5ds",
-        "Refresh": "vrains"
+        "LP_counting": "basic",
+        "LP_updated": "basic",
+        "LP_empty": "basic",
+        "Refresh": "basic"
     }
 }
