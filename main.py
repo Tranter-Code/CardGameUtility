@@ -1,18 +1,40 @@
-import os 
+import os, sys, json, pygame, threading
 import tkinter as tk 
 from tkinter import ttk, messagebox 
-import json
-import pygame 
-import threading 
 from Player import *
 from Game import *
 
-CONFIG_FILE = 'config.json'
+def resource_path(relative_path):
+    """Get absolute path to resource (works for dev and for PyInstaller)."""
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath("."), relative_path)
+
+def get_config_path():
+    """Return a writable config path for saving user settings."""
+    if getattr(sys, 'frozen', False):  # running as a bundled EXE
+        # Save config next to the .exe file
+        base_dir = os.path.dirname(sys.executable)
+    else:
+        # When running from source, save in the project folder
+        base_dir = os.path.abspath(".")
+    
+    return os.path.join(base_dir, "config.json")
+
+CONFIG_FILE = resource_path("config.json")
 
 class LifePointAppGUI(tk.Tk): # GUI app.
     def __init__(self):
         super().__init__()
-        self.iconphoto(False, tk.PhotoImage(file="assets/icons/icon.png"))
+        icon_path = resource_path("assets/icons/icon.png")
+        self.iconphoto(False, tk.PhotoImage(file=icon_path))
+
+        # 🪟 Windows Taskbar Icon Fix
+        if sys.platform.startswith("win"):
+            import ctypes
+            myappid = "CardGameLifePointsTracker"  # arbitrary unique ID
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+
         self.settings = self.load_settings() #load settings from config file
         self.current_overrides = self.settings.get("sound_paths", {})  # For custom theme sound overrides
         self.current_theme = self.settings["theme"] #default theme
@@ -376,7 +398,7 @@ class LifePointAppGUI(tk.Tk): # GUI app.
     def load_sound_effect(self, file_name: str, folder_name: str):
         path = os.path.join('assets', 'sounds', folder_name, file_name)
         try:
-            sound = pygame.mixer.Sound(path)
+            sound = pygame.mixer.Sound(resource_path(path))
             sound.set_volume(0.5)  # Set a default volume
             return sound
         except Exception as e:
@@ -399,15 +421,16 @@ class LifePointAppGUI(tk.Tk): # GUI app.
             self.refresh_sound = self.load_sound_effect("Refresh.wav", theme_keys.get(theme_name, theme_name.lower()))
 
     def load_settings(self):
-        if os.path.exists(CONFIG_FILE):
+        """Load settings safely, with defaults applied if missing."""
+        config_path = get_config_path()
+
+        data = {}
+        if os.path.exists(config_path):
             try:
-                with open(CONFIG_FILE, "r") as f:
+                with open(config_path, "r") as f:
                     data = json.load(f)
             except Exception as e:
                 print(f"⚠️ Error reading settings file: {e}")
-                data = {}
-        else:
-            data = {}
 
         # Apply defaults if missing
         data.setdefault("player1_name", "Player 1")
@@ -424,7 +447,9 @@ class LifePointAppGUI(tk.Tk): # GUI app.
         return data
 
     def save_settings(self):
-        """Save player data, theme, and per-sound folder mappings."""
+        """Save player data, theme, and per-sound folder mappings (portable)."""
+        config_path = get_config_path()  # <-- this line is key!
+
         # Always save folder names for each sound effect
         if self.current_theme == "Custom":
             sound_paths = self.current_overrides.copy()
@@ -446,9 +471,9 @@ class LifePointAppGUI(tk.Tk): # GUI app.
         }
 
         try:
-            with open(CONFIG_FILE, "w") as f:
+            with open(config_path, "w") as f:
                 json.dump(data, f, indent=4)
-            print("✅ Settings saved successfully.")
+            print(f"✅ Settings saved successfully to {config_path}")
         except Exception as e:
             print(f"⚠️ Error saving settings: {e}")
     
