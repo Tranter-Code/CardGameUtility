@@ -1,12 +1,21 @@
 {
-    "player1_name": "Player 1",
-    "player2_name": "Player 2",
-    "starting_lp": 8000,
-    "theme": "Basic",
-    "sound_paths": {
-        "LP_counting": "basic",
-        "LP_updated": "basic",
-        "LP_empty": "basic",
-        "Refresh": "basic"
+    "yugioh": {
+        "player1_name": "Player 1",
+        "player2_name": "Player 2",
+        "starting_lp": 8000,
+        "theme": "Basic",
+        "sound_paths": {
+            "LP_counting": "basic",
+            "LP_updated": "basic",
+            "LP_empty": "basic",
+            "Refresh": "basic"
+        }
+    },
+    "mtg": {
+        "player1_name": "Player 1",
+        "player2_name": "Player 2",
+        "starting_lp": 20,
+        "theme": "Default",
+        "sound_paths": {}
     }
 }
