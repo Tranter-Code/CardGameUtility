@@ -14,7 +14,7 @@ class SoundThemeManager:
 
     def load_sound_effect(self, file_name: str, folder_name: str):
         """Load a single .wav file and return a pygame sound object."""
-        path = resource_path(os.path.join('assets', 'sounds', folder_name, file_name))
+        path = resource_path(os.path.join('assets', 'sounds', 'yugioh', folder_name, file_name))
         try:
             sound = pygame.mixer.Sound(path)
             sound.set_volume(0.5)
