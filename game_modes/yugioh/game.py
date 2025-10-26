@@ -1,4 +1,6 @@
-#Player Class
+# --------------------
+# Player Class
+# --------------------
 
 class Player: #Individual players object
     def __init__(self, name, starting_lp):
@@ -16,7 +18,12 @@ class Player: #Individual players object
 
     def reset_lp(self, default_lp): #reset life points to the starting value
         self.lp = default_lp
-    
+
+
+# --------------------
+# Game Class
+# --------------------
+
 class Game: #Game object for two player objects that are playing together, with a starting lifepoint value for both players defaulted to 8000.
     def __init__(self, starting_lp):
         self.starting_lp = starting_lp

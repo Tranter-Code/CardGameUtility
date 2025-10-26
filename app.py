@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-from utils.helpers import load_settings, save_settings
+from utils.helpers import load_settings
 from game_modes.yugioh.gui import YuGiOhFrame
 
 class CardGameApp(tk.Tk):
