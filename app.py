@@ -11,9 +11,7 @@ class CardGameApp(ctk.CTk):
         self.title("Card Game Life Points Tracker")
         self.geometry("500x400")
 
-        # ✅ Apply CustomTkinter appearance
-        ctk.set_appearance_mode("system") 
-        ctk.set_default_color_theme("blue")  
+
 
         # 🔧 Load global configuration
         self.config_data = load_settings()
