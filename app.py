@@ -1,35 +1,69 @@
-import tkinter as tk
-from tkinter import ttk
-from utils.helpers import load_settings
+import customtkinter as ctk
+from utils.helpers import load_settings, resource_path
 from game_modes.yugioh.gui import YuGiOhFrame
+from game_modes.mtg.gui import MTGFrame
 
-class CardGameApp(tk.Tk):
+class CardGameApp(ctk.CTk):
     def __init__(self):
         super().__init__()
+
+        # 🧠 App setup
         self.title("Card Game Life Points Tracker")
-        self.geometry("500x400")
+        self.geometry("300x200")
+        self.resizable(False, False)
+
+        # 🔧 Load global configuration
         self.config_data = load_settings()
         self.current_frame = None
 
-        self.show_game_selector()
+        self.draw_main_menu()
 
-    def show_game_selector(self):
-        """Initial screen to choose which game to play."""
+    # -------------------------------
+    # Main Menu
+    # -------------------------------
+    def draw_main_menu(self, animate=False):
+        """Build the main menu (with optional fade-in animation)."""
         self.clear_window()
-        frame = ttk.Frame(self)
-        frame.pack(expand=True)
 
-        ttk.Label(frame, text="Select Your Game", font=("Arial", 16, "bold")).pack(pady=20)
-        ttk.Button(frame, text="Yu-Gi-Oh!", width=25, command=self.start_yugioh).pack(pady=10)
+        frame = ctk.CTkFrame(self)
+        frame.pack(expand=True, fill="both")
 
+        ctk.CTkLabel(frame, text="Select Your Game", font=("Arial", 18, "bold")).pack(pady=20)
+        ctk.CTkButton(frame, text="Yu-Gi-Oh!", width=200, height=40, command=self.start_yugioh).pack(pady=10)
+        ctk.CTkButton(frame, text="Magic: The Gathering", width=200, height=40, command=self.start_mtg).pack(pady=10)
+
+    # -------------------------------
+    # Screen Loaders
+    # -------------------------------
     def start_yugioh(self):
         self.switch_to(YuGiOhFrame, self.config_data)
 
-    def switch_to(self, FrameClass, config_data):
-        """Replace current frame with a new one (same window)."""
+    def start_mtg(self):
+        self.switch_to(MTGFrame, self.config_data)
+
+    def back_to_main_menu(self):
         self.clear_window()
+        self.draw_main_menu()
+        self.geometry("300x200")
+
+    # -------------------------------
+    # Frame Switching
+    # -------------------------------
+    def switch_to(self, FrameClass, config_data):
+        """Replace current frame with a new one (same window) and animate appearance."""
+        self.clear_window()
+
         self.current_frame = FrameClass(self, config_data)
         self.current_frame.pack(fill="both", expand=True)
+
+        # Determine target window size
+        if FrameClass.__name__ == "MTGFrame":
+            self.geometry("600x415")
+        elif FrameClass.__name__ == "YuGiOhFrame":
+            self.geometry("500x400")
+        else:
+            self.geometry("500x400")
+
 
     def clear_window(self):
         """Destroy any existing widgets in the window."""

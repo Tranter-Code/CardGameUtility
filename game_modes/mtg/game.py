@@ -2,34 +2,28 @@
 # Player Class
 # --------------------
 
-class Player: #Individual players object
-    def __init__(self, name, life_total):
-        self.name = name #player name
-        self.life = life_total #starting lifepoint value
-    
-    def damage(self, value): #reduce life point value by given value
-        self.life = max(0, self.life - value)
-    
-    def heal(self, value): #heal life point value by given value
-        self.life += value
-
-    def reset_lp(self, starting_life): #reset life points to the starting value
+class Player:
+    def __init__(self, name: str, starting_life: int = 20):
+        self.name = name
         self.life = starting_life
-    
+
+    def adjust_life(self, amount: int):
+        """Increase or decrease life points."""
+        self.life += amount
+
+
 
 # --------------------
 # Game Class
 # --------------------
-class Game: 
-    def __init__(self, life_total):
-        self.life_total = life_total
-        self.player1 = Player("Player 1", life_total) #create player 1 object
-        self.player2 = Player("Player 2", life_total) #create player 2 object
 
-    def get_player(self, number): #return either player 1 or 2 object depending on given number
-        if number == 1:
-            return self.player1
-        elif number == 2:
-            return self.player2
-        else:
-            return None
+class Game:
+    def __init__(self, starting_life=20, player1_name="Player 1", player2_name="Player 2"):
+        self.player1 = Player(player1_name, starting_life)
+        self.player2 = Player(player2_name, starting_life)
+        self.starting_life = starting_life
+
+    def reset(self):
+        """Reset both players to starting life points."""
+        self.player1.life = self.starting_life
+        self.player2.life = self.starting_life

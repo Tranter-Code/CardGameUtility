@@ -14,7 +14,7 @@
     "mtg": {
         "player1_name": "Player 1",
         "player2_name": "Player 2",
-        "starting_lp": 20,
+        "starting_life": 20,
         "theme": "Default",
         "sound_paths": {}
     }
