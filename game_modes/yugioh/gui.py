@@ -69,10 +69,14 @@ class YuGiOhFrame(ctk.CTkFrame):
     def show_main_screen(self):
         self.clear_game_tab()
 
+        top_frame1 = ctk.CTkFrame(self.game_tab)
+        top_frame1.pack(padx=5, pady=5, anchor="nw")
+        ctk.CTkButton(top_frame1, text="Back", command=self.master.back_to_main_menu).pack(side="left")
+
         top_frame = ctk.CTkFrame(self.game_tab)
         top_frame.pack(pady=(10, 5))
         ctk.CTkButton(top_frame, text="Reset", command=self.lp_controller.reset_all_lp).pack(side="left", padx=5)
-        ctk.CTkButton(top_frame, text="Back to Menu", command=self.master.show_game_selector).pack(side="left", padx=5)
+        
 
         # Player 1
         ctk.CTkLabel(self.game_tab, text=self.game.player1.name, font=("Arial", 14, "bold")).pack(pady=(10, 0))
