@@ -1,4 +1,5 @@
 import customtkinter as ctk
+import threading
 from game_modes.mtg.game import Game
 from game_modes.mtg.logic import MTGLifeController
 
@@ -39,11 +40,12 @@ class MTGFrame(ctk.CTkFrame):
         # Top Bar
         # ----------------------------
         top_bar = ctk.CTkFrame(self, fg_color="transparent", height=50)
-        top_bar.pack(fill="x", side="top", pady=(5, 10), padx=10)
+        top_bar.pack(fill="x", side="top", pady=(10, 5), padx=10)
 
         back_button = ctk.CTkButton(
             top_bar,
             text="←",
+            font=("Ariel", 16),
             width=40,
             height=40,
             corner_radius=8,
@@ -65,6 +67,7 @@ class MTGFrame(ctk.CTkFrame):
         settings_button = ctk.CTkButton(
             top_bar,
             text="⚙",
+            font=("Ariel", 16),
             width=40,
             height=40,
             corner_radius=8,
@@ -168,27 +171,78 @@ class MTGFrame(ctk.CTkFrame):
     # Helpers
     # ----------------------------
     def animate_life_change(self, player_num, old, new):
-        steps = 20
-        value = (new - old) / steps
-        current = old
+        # Identify target player
+        if player_num == 1:
+            label_widget = self.p1_frame.winfo_children()[1]
+            life_var = self.p1_life
+        else:
+            label_widget = self.p2_frame.winfo_children()[1]
+            life_var = self.p2_life
 
-        def step():
-            nonlocal current
-            if abs(current - new) > abs(value):
-                current += value
-                val = int(round(current))
-                if player_num == 1:
-                    self.p1_life.set(val)
-                else:
-                    self.p2_life.set(val)
-                self.after(30, step)
-            else:
-                if player_num == 1:
-                    self.p1_life.set(new)
-                else:
-                    self.p2_life.set(new)
+        # Detect change type
+        is_damage = new < old
+        is_heal = new > old
+        animation_duration = 150
 
-        step()
+        # -----------------------------
+        # DAMAGE: Flash text visibility
+        # -----------------------------
+        if is_damage:
+            flashes = 6  # number of flickers (even number)
+            visible_color = "white"
+            invisible_color = self.cget("fg_color")  # blend into background
+            count = 0
+            total_duration = flashes // 2 * animation_duration
+
+            self.after(total_duration // 2 + 100, lambda: life_var.set(str(new)))
+
+            def flicker():
+                nonlocal count
+                if count < flashes:
+                    # Alternate between visible and invisible
+                    color = visible_color if count % 2 == 0 else invisible_color
+                    label_widget.configure(text_color=color)
+                    count += 1
+                    self.after(100, flicker)
+                else:
+                    # Final state — show new value
+                    label_widget.configure(text_color=visible_color, text=str(new))
+
+            flicker()
+
+        # -----------------------------
+        # HEALING: Pulse font size
+        # -----------------------------
+        elif is_heal:
+            base_font = ("Arial", 36)
+            pulse_up = 45  # larger size
+            pulse_down = 36  # normal size
+            pulses = 3
+            count = 0
+
+            total_duration = pulses * 2 * animation_duration
+
+            self.after(total_duration // 2, lambda: life_var.set(str(new)))
+
+            def pulse():
+                nonlocal count
+                if count < pulses * 2:
+                    new_size = pulse_up if count % 2 == 0 else pulse_down
+                    label_widget.configure(font=("Arial", new_size))
+                    count += 1
+                    self.after(120, pulse)
+                else:
+                    # Final update with new number at normal size
+                    label_widget.configure(font=base_font, text=str(new))
+
+            pulse()
+
+        # -----------------------------
+        # No change or neutral update
+        # -----------------------------
+        else:
+            label_widget.configure(text=str(new))
+    
 
     def update_display(self):
         self.p1_life.set(self.game.player1.life)
