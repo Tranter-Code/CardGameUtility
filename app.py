@@ -1,7 +1,7 @@
 import customtkinter as ctk
 from utils.helpers import load_settings, resource_path
 from game_modes.yugioh.gui import YuGiOhFrame
-# (future) from game_modes.mtg.gui import MTGFrame
+from game_modes.mtg.gui import MTGFrame
 
 class CardGameApp(ctk.CTk):
     def __init__(self):
@@ -34,7 +34,7 @@ class CardGameApp(ctk.CTk):
 
         # ✅ Larger, modern CTk buttons
         ctk.CTkButton(frame, text="Yu-Gi-Oh!", width=200, height=40, command=self.start_yugioh).pack(pady=10)
-
+        ctk.CTkButton(frame, text="Magic: The Gathering", width=150, command=self.start_mtg).pack(pady=10)
         # (future-proofing) MTG placeholder
         # ctk.CTkButton(frame, text="Magic: The Gathering", width=200, height=40, command=self.start_mtg).pack(pady=10)
 
@@ -42,12 +42,10 @@ class CardGameApp(ctk.CTk):
     # Game Loaders
     # -------------------------------
     def start_yugioh(self):
-        """Switch to the Yu-Gi-Oh! interface."""
         self.switch_to(YuGiOhFrame, self.config_data)
 
-    # def start_mtg(self):
-    #     """Switch to the MTG interface (future)."""
-    #     self.switch_to(MTGFrame, self.config_data)
+    def start_mtg(self):
+        self.switch_to(MTGFrame, self.config_data)
 
     # -------------------------------
     # Frame Switching
