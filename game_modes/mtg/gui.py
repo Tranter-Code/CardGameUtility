@@ -9,7 +9,7 @@ class MTGFrame(ctk.CTkFrame):
         self.master = master
         self.config_data = config_data
         self.settings = config_data["mtg"]
-        self.selected_player = None  # 1 or 2
+        self.selected_player = None  
 
         # Game setup
         self.game = Game(
@@ -39,19 +39,18 @@ class MTGFrame(ctk.CTkFrame):
         # ----------------------------
         # Top Bar
         # ----------------------------
-        top_bar = ctk.CTkFrame(self, fg_color="transparent", height=50)
+        top_bar = ctk.CTkFrame(self, fg_color="transparent", height=55)
         top_bar.pack(fill="x", side="top", pady=(10, 5), padx=10)
 
         back_button = ctk.CTkButton(
             top_bar,
             text="←",
+            text_color="black",
+            fg_color="transparent",
             font=("Ariel", 16),
             width=40,
             height=40,
             corner_radius=8,
-            fg_color="transparent",
-            hover_color="#3C3C3C",
-            text_color="white",
             command=self.master.back_to_main_menu
         )
         back_button.pack(side="left", padx=5, anchor="w")
@@ -60,20 +59,18 @@ class MTGFrame(ctk.CTkFrame):
             top_bar,
             text="Magic: The Gathering",
             font=("Arial", 20, "bold"),
-            text_color="white"
         )
         title_label.pack(side="left", expand=True, pady=5)
 
         settings_button = ctk.CTkButton(
             top_bar,
             text="⚙",
-            font=("Ariel", 16),
+            text_color="black",
+            fg_color="transparent",
+            font=("Ariel", 20),
             width=40,
             height=40,
             corner_radius=8,
-            fg_color="transparent",
-            hover_color="#3C3C3C",
-            text_color="white",
             command=lambda: print("Settings clicked")  # Placeholder
         )
         settings_button.pack(side="right", padx=5, anchor="e")
@@ -82,11 +79,12 @@ class MTGFrame(ctk.CTkFrame):
         # Reset Button
         # ----------------------------
         reset_button = ctk.CTkButton(
-            self, text="Reset",
+            self,
+            text="Reset",
+            font=("Arial", 12),
             width=70,
             height=20,
-            corner_radius=8,
-            text_color="white",
+            corner_radius=20,
             command=self.controller.reset_life
         )
         reset_button.pack(side="top", expand=True)
@@ -96,13 +94,12 @@ class MTGFrame(ctk.CTkFrame):
         # ----------------------------
         container = ctk.CTkFrame(self, fg_color="transparent")
         container.pack(expand=True, fill="both", padx=20, pady=(10, 15))
-
         player_box_size = 250
 
         # Player 1 frame
         self.p1_frame = ctk.CTkFrame(
             container,
-            fg_color="#222222",
+            fg_color="#373737",
             corner_radius=12,
             width=player_box_size,
             height=player_box_size,
@@ -118,7 +115,7 @@ class MTGFrame(ctk.CTkFrame):
         # Player 2 frame
         self.p2_frame = ctk.CTkFrame(
             container,
-            fg_color="#222222",
+            fg_color="#373737",
             corner_radius=12,
             width=player_box_size,
             height=player_box_size,
@@ -140,9 +137,10 @@ class MTGFrame(ctk.CTkFrame):
         self.value_label = ctk.CTkLabel(control_frame, textvariable=self.value_var, font=("Arial", 16, "bold"))
         self.value_label.pack(side="left", padx=5)
 
-        ctk.CTkButton(control_frame, text="+", width=40, command=self.increment).pack(side="left", padx=5)
+        
         ctk.CTkButton(control_frame, text="-", width=40, command=self.decrement).pack(side="left", padx=5)
         ctk.CTkButton(control_frame, text="Confirm", width=100, command=self.confirm_change).pack(side="left", padx=10)
+        ctk.CTkButton(control_frame, text="+", width=40, command=self.increment).pack(side="left", padx=5)
         
     # ----------------------------
     # Core actions

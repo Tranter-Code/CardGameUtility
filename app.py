@@ -1,5 +1,6 @@
 import customtkinter as ctk
-from utils.helpers import load_settings, resource_path
+import darkdetect
+from utils.helpers import load_settings
 from game_modes.yugioh.gui import YuGiOhFrame
 from game_modes.mtg.gui import MTGFrame
 
@@ -14,6 +15,10 @@ class CardGameApp(ctk.CTk):
 
         # 🔧 Load global configuration
         self.config_data = load_settings()
+        if darkdetect.isDark:
+            self.colour_theme = self.config_data["themes"]["dark"]
+        else:
+            self.colour_theme = self.config_data["themes"]["light"]
         self.current_frame = None
 
         self.draw_main_menu()
