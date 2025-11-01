@@ -1,6 +1,5 @@
 import customtkinter as ctk
-import darkdetect
-from utils.helpers import load_settings
+from utils.helpers import load_settings, get_theme, build_fonts
 from game_modes.yugioh.gui import YuGiOhFrame
 from game_modes.mtg.gui import MTGFrame
 
@@ -15,10 +14,9 @@ class CardGameApp(ctk.CTk):
 
         # 🔧 Load global configuration
         self.config_data = load_settings()
-        if darkdetect.isDark:
-            self.colour_theme = self.config_data["themes"]["dark"]
-        else:
-            self.colour_theme = self.config_data["themes"]["light"]
+        self.colour_theme = get_theme(self.config_data)
+        self.fonts = build_fonts(self.colour_theme)
+        ctk.set_appearance_mode(self.config_data["selected_theme"])
         self.current_frame = None
 
         self.draw_main_menu()
@@ -29,8 +27,8 @@ class CardGameApp(ctk.CTk):
     def draw_main_menu(self, animate=False):
         """Build the main menu (with optional fade-in animation)."""
         self.clear_window()
-
         frame = ctk.CTkFrame(self)
+        
         frame.pack(expand=True, fill="both")
 
         ctk.CTkLabel(frame, text="Select Your Game", font=("Arial", 18, "bold")).pack(pady=20)
@@ -51,11 +49,15 @@ class CardGameApp(ctk.CTk):
         self.draw_main_menu()
         self.geometry("300x200")
 
+    def previous_screen(self, function):
+        self.clear_window()
+        function()
+
+
     # -------------------------------
     # Frame Switching
     # -------------------------------
     def switch_to(self, FrameClass, config_data):
-        """Replace current frame with a new one (same window) and animate appearance."""
         self.clear_window()
 
         self.current_frame = FrameClass(self, config_data)
@@ -71,6 +73,5 @@ class CardGameApp(ctk.CTk):
 
 
     def clear_window(self):
-        """Destroy any existing widgets in the window."""
         for widget in self.winfo_children():
             widget.destroy()

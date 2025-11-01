@@ -1,5 +1,6 @@
 import customtkinter as ctk
 import threading
+from utils.helpers import build_fonts
 from game_modes.mtg.game import Game
 from game_modes.mtg.logic import MTGLifeController
 
@@ -9,7 +10,7 @@ class MTGFrame(ctk.CTkFrame):
         self.master = master
         self.config_data = config_data
         self.settings = config_data["mtg"]
-        self.selected_player = None  
+        self.selected_player = None
 
         # Game setup
         self.game = Game(
@@ -39,13 +40,13 @@ class MTGFrame(ctk.CTkFrame):
         # ----------------------------
         # Top Bar
         # ----------------------------
-        top_bar = ctk.CTkFrame(self, fg_color="transparent", height=55)
-        top_bar.pack(fill="x", side="top", pady=(10, 5), padx=10)
+        top_bar = ctk.CTkFrame(self, fg_color="transparent")
+        top_bar.pack(fill="x", side="top", pady=(10, 0), padx=5)
 
         back_button = ctk.CTkButton(
             top_bar,
             text="←",
-            text_color="black",
+            text_color=self.master.colour_theme["text_primary"],
             fg_color="transparent",
             font=("Ariel", 16),
             width=40,
@@ -58,14 +59,16 @@ class MTGFrame(ctk.CTkFrame):
         title_label = ctk.CTkLabel(
             top_bar,
             text="Magic: The Gathering",
-            font=("Arial", 20, "bold"),
+            font=self.master.fonts["heading"],
+            fg_color="transparent",
+            pady=6
         )
-        title_label.pack(side="left", expand=True, pady=5)
+        title_label.pack(side="left", expand=True, pady=(0, 5))
 
         settings_button = ctk.CTkButton(
             top_bar,
             text="⚙",
-            text_color="black",
+            text_color=self.master.colour_theme["text_primary"],
             fg_color="transparent",
             font=("Ariel", 20),
             width=40,
