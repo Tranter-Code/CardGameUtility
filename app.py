@@ -17,10 +17,10 @@ class CardGameApp(ctk.CTk):
         self.colour_theme = get_theme(self.config_data)
         self.fonts = build_fonts(self.colour_theme)
         self.icons = {
-            "back": load_icon("arrow_left", size=(20,20), mode=self.config_data["selected_theme"]),
-            "settings": load_icon("settings", size=(20,20), mode=self.config_data["selected_theme"])
+            "back": load_icon("arrow_left", size=(20,20), mode=self.config_data["global"]["selected_theme"]),
+            "settings": load_icon("settings", size=(20,20), mode=self.config_data["global"]["selected_theme"])
         }
-        ctk.set_appearance_mode(self.config_data["selected_theme"])
+        ctk.set_appearance_mode(self.config_data["global"]["selected_theme"])
         self.current_frame = None
 
         self.draw_main_menu()
@@ -44,7 +44,6 @@ class CardGameApp(ctk.CTk):
         top_bar.grid_columnconfigure(1, weight=3)  # title area
         top_bar.grid_columnconfigure(2, weight=1)  # right spacer
 
-        # Left placeholder (for balance)
         placeholder = ctk.CTkLabel(top_bar, text="", width=40)
         placeholder.grid(row=0, column=0, sticky="w", padx=5)
 
@@ -141,62 +140,92 @@ class CardGameApp(ctk.CTk):
 
         # 🔹 Top Bar
         top_bar = ctk.CTkFrame(frame, fg_color="transparent")
-        top_bar.pack(fill="x", side="top", pady=(10, 0), padx=5)
+        top_bar.pack(fill="x", side="top", pady=(5, 0), padx=5)
         top_bar.grid_columnconfigure(0, weight=1)
         top_bar.grid_columnconfigure(1, weight=3)
         top_bar.grid_columnconfigure(2, weight=1)
 
         # ← Back Button
         back_button = ctk.CTkButton(
-            top_bar, text="", image=self.icons["back"],
-            fg_color="transparent", width=40, height=40,
+            top_bar,
+            text="",
+            image=self.icons["back"],
+            fg_color="transparent",
+            hover_color=self.colour_theme["button_hover"],
+            width=40,
+            height=40,
             command=self.draw_main_menu
         )
         back_button.grid(row=0, column=0, sticky="w", padx=5)
 
         # Title
-        title_label = ctk.CTkLabel(top_bar, text="Settings", font=self.fonts["heading"])
+        title_label = ctk.CTkLabel(top_bar,
+                                   text="Settings",
+                                   font=self.fonts["heading"],
+                                   pady=6)
         title_label.grid(row=0, column=1)
+
+        # Left placeholder (for balance)
+        placeholder = ctk.CTkLabel(top_bar, text="", width=40)
+        placeholder.grid(row=0, column=2, sticky="w", padx=5)
 
         # ⚙️ Content
         content = ctk.CTkFrame(frame, fg_color="transparent")
-        content.pack(expand=True, pady=20)
+        content.pack(expand=True, pady=5)
 
-        # Theme toggle
-        ctk.CTkLabel(content, text="Theme:").pack(pady=(5, 0))
-        theme_switch = ctk.CTkSwitch(
-            content,
+        # Theme row (label + switch side by side)
+        theme_row = ctk.CTkFrame(content, fg_color="transparent")
+        theme_row.pack(fill="x", padx=30, pady=(5, 10))
+
+        theme_label = ctk.CTkLabel(
+            theme_row,
             text="Dark Mode",
-            command=lambda: self.toggle_theme(theme_switch)
+            font=self.fonts["body"]
         )
-        theme_switch.pack(pady=10)
-        if self.config_data["selected_theme"] == "dark":
+        theme_label.pack(side="left", anchor="w")
+
+        theme_switch = ctk.CTkSwitch(
+            theme_row,
+            text="",  # no label text, since we have our own label
+            command=lambda: self.toggle_theme(theme_switch, self.show_settings_menu)
+        )
+        theme_switch.pack(side="right", anchor="e")
+
+        if self.config_data["global"]["selected_theme"] == "dark":
             theme_switch.select()
 
-        # Volume slider
-        ctk.CTkLabel(content, text="Volume:").pack(pady=(15, 0))
+        # Volume row (label + slider side by side)
+        volume_row = ctk.CTkFrame(content, fg_color="transparent")
+        volume_row.pack(fill="x", padx=30, pady=(10, 10))
+
+        volume_label = ctk.CTkLabel(volume_row, text="Volume", font=self.fonts["body"])
+        volume_label.pack(side="left", anchor="w")
+
         volume_slider = ctk.CTkSlider(
-            content,
+            volume_row,
             from_=0,
             to=1,
-            number_of_steps=10,
+            number_of_steps=50,
             command=lambda v: self.set_volume(v)
         )
-        volume_slider.set(self.config_data.get("volume", 1.0))
-        volume_slider.pack(pady=10)
+        volume_slider.set(self.config_data["global"].get("volume", 0.5))
+        volume_slider.pack(side="right", fill="x", expand=True)
 
     # -------------------------------
     # Handlers
     # -------------------------------
-    def toggle_theme(self, switch):
+    def toggle_theme(self, switch, function):
         theme = "dark" if switch.get() else "light"
-        self.config_data["selected_theme"] = theme
-        save_settings({"selected_theme": theme})
+        self.config_data["global"]["selected_theme"] = theme
+        save_settings({"global": {"selected_theme": theme}})
         ctk.set_appearance_mode(theme)
+        self.icons = {
+            "back": load_icon("arrow_left", size=(20,20), mode=theme),
+            "settings": load_icon("settings", size=(20,20), mode=theme)
+        }
         self.colour_theme = get_theme(self.config_data)
-        self.draw_main_menu()  # refresh UI with new theme
+        function()
 
     def set_volume(self, value):
-        self.config_data["volume"] = round(float(value), 2)
-        save_settings({"volume": self.config_data["volume"]})
-        print(f"🔊 Volume set to {self.config_data['volume'] * 100:.0f}%")
+        self.config_data["global"]["volume"] = round(float(value), 2)
+        save_settings({"global": {"volume": self.config_data["global"]["volume"]}})

@@ -1,8 +1,12 @@
 {
+    "global": {
+        "selected_theme": "dark",
+        "volume": 0.03
+    },
     "yugioh": {
-        "player1_name": "Player 1",
-        "player2_name": "Player 2",
-        "starting_lp": 8000,
+        "player1_name": "Bill",
+        "player2_name": "Ben",
+        "starting_lp": 4000,
         "theme": "Basic",
         "sound_paths": {
             "LP_counting": "basic",
@@ -18,8 +22,6 @@
         "theme": "Default",
         "sound_paths": {}
     },
-    "volume": 0.3,
-    "selected_theme": "dark",
     "themes": {
         "dark": {
             "background": "#1e1e1e",

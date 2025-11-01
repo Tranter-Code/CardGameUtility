@@ -32,7 +32,7 @@ class YuGiOhFrame(ctk.CTkFrame):
         self.game.player2.name = self.settings["player2_name"]
 
         # Sound + LP controller
-        self.sfx = SoundThemeManager(self.settings, self.theme_map)
+        self.sfx = SoundThemeManager(config_data, self.theme_map)
         self.lp_controller = LifePointController(self)
 
         # StringVars for UI
@@ -41,7 +41,7 @@ class YuGiOhFrame(ctk.CTkFrame):
 
         # Build main screen
         self.show_main_screen()
-        self.sfx.play_sound("refresh")
+        self.sfx.play_sound("Refresh")
 
 
     # ----------------------------
@@ -96,7 +96,7 @@ class YuGiOhFrame(ctk.CTkFrame):
         settings_button.grid(row=0, column=2, sticky="e", padx=5)
 
         # Player 1
-        ctk.CTkLabel(self, text=self.game.player1.name, font=("Arial", 14, "bold")).pack(pady=(10, 0))
+        ctk.CTkLabel(self, text=self.game.player1.name, font=("Arial", 14, "bold"), pady=6).pack(pady=(10, 0))
         ctk.CTkLabel(self, textvariable=self.lp1_var, font=("Arial", 20)).pack()
         p1_frame = ctk.CTkFrame(self)
         p1_frame.pack(pady=5)
@@ -108,7 +108,7 @@ class YuGiOhFrame(ctk.CTkFrame):
                       command=lambda: self.lp_controller.halve_lp(1)).pack(side="left", padx=2)
 
         # Player 2
-        ctk.CTkLabel(self, text=self.game.player2.name, font=("Arial", 14, "bold")).pack(pady=(15, 0))
+        ctk.CTkLabel(self, text=self.game.player2.name, font=("Arial", 14, "bold"), pady=6).pack(pady=(15, 0))
         ctk.CTkLabel(self, textvariable=self.lp2_var, font=("Arial", 20)).pack()
         p2_frame = ctk.CTkFrame(self)
         p2_frame.pack(pady=5)
@@ -120,7 +120,7 @@ class YuGiOhFrame(ctk.CTkFrame):
                       command=lambda: self.lp_controller.halve_lp(2)).pack(side="left", padx=2)
 
     # ----------------------------
-    # Settings screen (replaces main view)
+    # Settings screen 
     # ----------------------------
     def show_settings_screen(self):
         # ----------------------------
@@ -153,7 +153,7 @@ class YuGiOhFrame(ctk.CTkFrame):
             top_bar,
             text="Settings",
             font=self.master.fonts["heading"],
-            pady = 6
+            pady=6
         )
         title_label.grid(row=0, column=1, padx=5)
 
@@ -161,33 +161,107 @@ class YuGiOhFrame(ctk.CTkFrame):
         placeholder = ctk.CTkLabel(top_bar, text="", width=40)
         placeholder.grid(row=0, column=2, sticky="e", padx=5)
 
-        # Player settings
-        ctk.CTkButton(self, text="Change Player Names",
-                      command=self.open_name_editor).pack(pady=10)
-        ctk.CTkButton(self, text="Change Starting Life Points",
-                      command=self.open_starting_lp_editor).pack(pady=5)
+        # ----------------------------
+        # Settings Content (rows)
+        # ----------------------------
+        content = ctk.CTkFrame(self, fg_color="transparent")
+        content.pack(expand=True, fill="both", padx=20, pady=12)
 
-        # Sound theme section
-        ctk.CTkLabel(self, text="Select Sound Theme:").pack(pady=(20, 5))
-        frame = ctk.CTkFrame(self)
-        frame.pack(pady=5)
+        def add_row(label_text, widget_factory, stretch_right=False):
+            """Adds a new row (label + widget) using pack layout."""
+            row = ctk.CTkFrame(content, fg_color="transparent")
+            row.pack(fill="x", pady=6, padx=20)
 
-        self.theme_var = ctk.StringVar(value=self.current_theme)
-        theme_selector = ctk.CTkOptionMenu(
-            master=frame,
-            values=list(self.theme_map.keys()),
-            variable=self.theme_var,
-            command=self.on_theme_change
-        )
-        theme_selector.pack(side="left", padx=(0, 10))
+            label = ctk.CTkLabel(row, text=label_text, font=self.master.fonts["body"])
+            label.pack(side="left")
 
-        ctk.CTkButton(frame, text="Customize...", command=self.open_custom_theme_editor).pack(side="left")
+            widget = widget_factory(row)
+            if stretch_right:
+                widget.pack(side="right", fill="x", expand=True)
+            else:
+                widget.pack(side="right")
+
+        def add_separator(text):
+            sep = ctk.CTkLabel(
+                content,
+                text=text,
+                font=self.master.fonts["body"],
+                text_color=self.master.colour_theme["text_primary"],
+                pady=6
+            )
+            sep.pack(fill="x", pady=(25, 5))
+
+        # --- Appearance (Dark / Light)
+        def make_theme_switch(parent):
+            switch = ctk.CTkSwitch(parent, text="")
+
+            def on_toggle():
+                # toggle app theme using your existing API
+                self.master.toggle_theme(switch, lambda: self.change_screen(self.show_settings_screen))
+
+            switch.configure(command=on_toggle)
+
+            if self.master.config_data["global"]["selected_theme"] == "dark":
+                switch.select()
+            return switch
+
+        add_row("Appearance (Dark Mode)", make_theme_switch)
+
+        # --- Sound Volume (slider stretches to the right)
+        def make_volume_slider(parent):
+            slider = ctk.CTkSlider(
+                parent,
+                from_=0,
+                to=1,
+                number_of_steps=100,  # 0.01 precision
+                command=lambda v: self.master.set_volume(v)
+            )
+            slider.set(self.master.config_data["global"].get("volume", 1.0))
+            return slider
+        add_row("Sound Volume", make_volume_slider, stretch_right=True)
+
+        add_separator("---------------------------------------- Yu-Gi-Oh ----------------------------------------")
+
+        # --- Player Names
+        add_row("Player Names",
+                lambda parent: ctk.CTkButton(parent, text="Edit", width=90, command=self.open_name_editor))
+
+        # --- Starting LP
+        add_row("Starting Life Points",
+                lambda parent: ctk.CTkButton(parent, text="Edit", width=90, command=self.open_starting_lp_editor))
+
+        # --- Sound Theme (dropdown + customize button in same row)
+        def make_sound_theme_row(parent):
+            inner = ctk.CTkFrame(parent, fg_color="transparent")
+
+            self.theme_var = ctk.StringVar(value=self.current_theme)
+
+            theme_selector = ctk.CTkOptionMenu(
+                inner,
+                values=list(self.theme_map.keys()),
+                variable=self.theme_var,
+                command=self.on_theme_change,
+                width=160
+            )
+            theme_selector.pack(side="left", padx=(0, 8))
+
+            btn_custom = ctk.CTkButton(
+                inner,
+                text="Customize…",
+                width=90,
+                command=self.open_custom_theme_editor
+            )
+            btn_custom.pack(side="left")
+
+            return inner
+
+        add_row("Sound Theme", make_sound_theme_row)
 
     # ----------------------------
     # Settings handlers
     # ----------------------------
     def on_theme_change(self, selected):
-        self.sfx.load_theme(selected)
+        self.sfx.sounds = self.sfx.load_theme(selected)
         self.current_theme = selected
         self.settings["theme"] = selected
 
@@ -201,7 +275,7 @@ class YuGiOhFrame(ctk.CTkFrame):
 
         save_settings({"yugioh": self.settings})
         self.master.title(f"Yu-Gi-Oh! Life Points — Theme: {selected}")
-        self.sfx.play_sound("refresh")
+        self.sfx.play_sound("Refresh")
 
 
     # ----------------------------
@@ -347,13 +421,13 @@ class YuGiOhFrame(ctk.CTkFrame):
             self.current_theme = "Custom"
 
             save_settings({"yugioh": self.settings})
-            self.sfx.load_theme("Custom")
+            self.sfx.sounds = self.sfx.load_theme("Custom")
 
             self.master.title("Yu-Gi-Oh! Life Points — Theme: Custom")
             if hasattr(self, 'theme_var'):
                 self.theme_var.set("Custom")
 
-            self.sfx.play_sound("refresh")
+            self.sfx.play_sound("Refresh")
             popup.destroy()
 
         ctk.CTkButton(
@@ -438,7 +512,7 @@ class YuGiOhFrame(ctk.CTkFrame):
         count = 0
 
         # Play counting sound
-        self.sfx.play_sound("lp_count")
+        self.sfx.play_sound("LP_counting")
 
         def update_step():
             nonlocal current, count
@@ -460,9 +534,9 @@ class YuGiOhFrame(ctk.CTkFrame):
 
                 # Play ending sound
                 if new_value == 0:
-                    self.sfx.play_sound("lp_empty")
+                    self.sfx.play_sound("LP_empty")
                 else:
-                    self.sfx.play_sound("lp_updated")
+                    self.sfx.play_sound("LP_updated")
 
         # Start animation
         self.after(100, update_step)

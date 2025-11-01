@@ -22,6 +22,10 @@ def get_config_path(filename="config.json"):
 CONFIG_FILE = resource_path("config.json")
 
 DEFAULT_CONFIG = {
+    "global": {
+        "selected_theme": "dark",
+        "volume": 0.5
+    },
     "yugioh": {
         "player1_name": "Player 1",
         "player2_name": "Player 2",
@@ -45,8 +49,9 @@ DEFAULT_CONFIG = {
         "dark": {
             "background": "#1e1e1e",
             "frame_bg": "#2a2a2a",
-            "text_primary": "#ffffff",
-            "text_secondary": "#00b4d8",
+            "text_primary": "white",
+            "text_secondary": "black",
+            "container_bg": "#3a3a3a",
             "button_bg": "#2c2c2c",
             "button_hover": "#3a3a3a",
             "button_text": "#ffffff",
@@ -56,7 +61,7 @@ DEFAULT_CONFIG = {
                 "heading": {
                     "family": "Arial",
                     "size": 20,
-                    "weight": "bold" 
+                    "weight": "bold"
                 },
                 "subheading": {
                     "family": "Arial",
@@ -77,27 +82,28 @@ DEFAULT_CONFIG = {
         "light": {
             "background": "#f4f4f4",
             "frame_bg": "#ffffff",
-            "text_primary": "#000000",
-            "text_secondary": "#0077b6",
+            "text_primary": "black",
+            "text_secondary": "white",
+            "container_bg": "#e0e0e0",
             "button_bg": "#e0e0e0",
             "button_hover": "#d0d0d0",
             "button_text": "#000000",
             "accent": "#0077b6",
             "warning": "#d90429",
             "fonts": {
-                "heading": { 
+                "heading": {
                     "family": "Arial",
                     "size": 20,
-                    "weight": "bold" 
+                    "weight": "bold"
                 },
-                "subheading": { 
+                "subheading": {
                     "family": "Arial",
                     "size": 16,
                     "weight": "bold"
                 },
                 "body": {
                     "family": "Arial",
-                    "size": 14 
+                    "size": 14
                 },
                 "lp_counter": {
                     "family": "Arial",
@@ -110,9 +116,7 @@ DEFAULT_CONFIG = {
 }
 
 def load_settings():
-    """Load settings safely with defaults for each game mode."""
     config_path = get_config_path()
-
     data = {}
 
     # 1️⃣ Load existing config file (if available)
@@ -128,27 +132,33 @@ def load_settings():
         data = DEFAULT_CONFIG.copy()
         save_settings(data)
 
-    # 2️⃣ Ensure all game sections exist (yugioh, mtg, etc.)
-    for game, defaults in DEFAULT_CONFIG.items():
-        if game not in data:
-            data[game] = defaults.copy()
-        else:
-            # 3️⃣ Fill in any missing keys inside each section
+    # 2️⃣ Ensure all sections exist and safely merge dict sections
+    for section, defaults in DEFAULT_CONFIG.items():
+        if section not in data:
+            # Safe shallow copy for dicts, direct assignment for primitives
+            data[section] = defaults.copy() if isinstance(defaults, dict) else defaults
+        elif isinstance(defaults, dict) and isinstance(data[section], dict):
+            # Merge missing keys inside dict sections
             for key, default_value in defaults.items():
-                if key not in data[game]:
-                    data[game][key] = default_value
+                if key not in data[section]:
+                    data[section][key] = default_value
+
+    # ✅ Ensure critical global defaults (in case missing)
+    if "global" not in data:
+        data["global"] = DEFAULT_CONFIG["global"].copy()
+    if "selected_theme" not in data["global"]:
+        data["global"]["selected_theme"] = "dark"
+    if "volume" not in data["global"]:
+        data["global"]["volume"] = 1.0
 
     return data
 
+
 def save_settings(new_data: dict):
-    """
-    Save only the specified game section (e.g., 'yugioh' or 'mtg') 
-    without overwriting the entire config file.
-    """
     config_path = get_config_path()
     current_data = {}
 
-    # Load current config if it exists
+    # Load current config
     if os.path.exists(config_path):
         try:
             with open(config_path, "r") as f:
@@ -157,22 +167,28 @@ def save_settings(new_data: dict):
             print(f"⚠️ Error reading settings file before saving: {e}")
             current_data = {}
 
-    # Merge new data
-    for key, value in new_data.items():
-        current_data[key] = value  # e.g. "yugioh": {...}
+    # Deep merge helper
+    def merge_dicts(target, updates):
+        for key, value in updates.items():
+            if isinstance(value, dict) and isinstance(target.get(key), dict):
+                merge_dicts(target[key], value)
+            else:
+                target[key] = value
 
-    # Save merged config
+    # Merge the new data safely
+    merge_dicts(current_data, new_data)
+
+    # Save updated config
     try:
         with open(config_path, "w") as f:
             json.dump(current_data, f, indent=4)
-        print(f"✅ Settings updated successfully in {config_path}")
     except Exception as e:
         print(f"⚠️ Error saving settings: {e}")
 
 
 def get_theme(config_data: dict):
     theme = {}
-    if config_data["selected_theme"] == "dark":
+    if config_data["global"]["selected_theme"] == "dark":
         theme = config_data["themes"]["dark"]
         return theme
     else:
