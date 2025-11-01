@@ -1,14 +1,14 @@
 {
     "yugioh": {
-        "player1_name": "Dave",
-        "player2_name": "Ben",
-        "starting_lp": 4000,
-        "theme": "GX",
+        "player1_name": "Player 1",
+        "player2_name": "Player 2",
+        "starting_lp": 8000,
+        "theme": "Basic",
         "sound_paths": {
-            "LP_counting": "gx",
-            "LP_updated": "gx",
-            "LP_empty": "gx",
-            "Refresh": "gx"
+            "LP_counting": "basic",
+            "LP_updated": "basic",
+            "LP_empty": "basic",
+            "Refresh": "basic"
         }
     },
     "mtg": {
@@ -18,13 +18,15 @@
         "theme": "Default",
         "sound_paths": {}
     },
-    "selected_theme": "light",
+    "volume": 0.3,
+    "selected_theme": "dark",
     "themes": {
         "dark": {
             "background": "#1e1e1e",
             "frame_bg": "#2a2a2a",
             "text_primary": "white",
             "text_secondary": "black",
+            "container_bg": "#3a3a3a",
             "button_bg": "#2c2c2c",
             "button_hover": "#3a3a3a",
             "button_text": "#ffffff",
@@ -57,6 +59,7 @@
             "frame_bg": "#ffffff",
             "text_primary": "black",
             "text_secondary": "white",
+            "container_bg": "#e0e0e0",
             "button_bg": "#e0e0e0",
             "button_hover": "#d0d0d0",
             "button_text": "#000000",

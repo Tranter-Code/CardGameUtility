@@ -1,8 +1,6 @@
-import os, sys, threading
 import customtkinter as ctk
-from PIL import Image
 from tkinter import messagebox
-from utils.helpers import resource_path, load_settings, save_settings
+from utils.helpers import save_settings
 from game_modes.yugioh.game import Game
 from game_modes.yugioh.logic import LifePointController
 from game_modes.yugioh.theme import SoundThemeManager
@@ -59,12 +57,13 @@ class YuGiOhFrame(ctk.CTkFrame):
         top_bar.grid_columnconfigure(1, weight=3)  # title area
         top_bar.grid_columnconfigure(2, weight=1)  # right spacer
 
-        # ← Back Button
         back_button = ctk.CTkButton(
             top_bar,
-            text="←",
+            text="",
+            image=self.master.icons["back"],
             text_color=self.master.colour_theme["text_primary"],
             fg_color="transparent",
+            hover_color=self.master.colour_theme["button_hover"],
             font=("Ariel", 16),
             width=40,
             height=40,
@@ -73,7 +72,6 @@ class YuGiOhFrame(ctk.CTkFrame):
         )
         back_button.grid(row=0, column=0, sticky="w", padx=5)
 
-        # 🏷️ Title Label
         title_label = ctk.CTkLabel(
             top_bar,
             text="Yu-Gi-Oh!",
@@ -82,12 +80,13 @@ class YuGiOhFrame(ctk.CTkFrame):
         )
         title_label.grid(row=0, column=1, padx=5)
 
-        # ⚙️ Right Button (optional)
         settings_button = ctk.CTkButton(
             top_bar,
-            text="⚙",
+            text="",
+            image=self.master.icons["settings"],
             text_color=self.master.colour_theme["text_primary"],
             fg_color="transparent",
+            hover_color=self.master.colour_theme["button_hover"],
             font=("Arial", 20),
             width=40,
             height=40,
@@ -136,9 +135,11 @@ class YuGiOhFrame(ctk.CTkFrame):
         # ← Back Button
         back_button = ctk.CTkButton(
             top_bar,
-            text="←",
+            text="",
+            image=self.master.icons["back"],
             text_color=self.master.colour_theme["text_primary"],
             fg_color="transparent",
+            hover_color=self.master.colour_theme["button_hover"],
             font=("Ariel", 16),
             width=40,
             height=40,

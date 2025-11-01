@@ -1,5 +1,6 @@
 import os, json, sys
-from customtkinter import CTkFont
+from PIL import Image, ImageOps
+import customtkinter as ctk
 
 def resource_path(relative_path):
     """Get absolute path to resource (works for dev and for PyInstaller)."""
@@ -183,9 +184,35 @@ def build_fonts(selected_theme:dict):
     fonts = {}
 
     for key, props in font_defs.items():
-        fonts[key] = CTkFont(
+        fonts[key] = ctk.CTkFont(
             family=props.get("family", "Arial"),
             size=props.get("size", 12),
             weight=props.get("weight", "normal")
         )
     return fonts
+
+def load_icon(name: str, size=(24, 24), mode="dark"):
+    path = os.path.join("assets", "icons", f"{name}.png")
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"Icon not found: {path}")
+
+    # Load with alpha
+    img = Image.open(path).convert("RGBA")
+
+    # Split the alpha channel (so we can preserve transparency)
+    r, g, b, alpha = img.split()
+
+    # Convert RGB to grayscale for recoloring
+    gray = ImageOps.grayscale(img)
+
+    if mode == "dark":
+        # Recolor black → white (for dark mode)
+        recolored = ImageOps.colorize(gray, black="white", white="black")
+    else:
+        # Keep original black (for light mode)
+        recolored = ImageOps.colorize(gray, black="black", white="white")
+
+    # Reapply alpha channel so transparency is preserved
+    recolored.putalpha(alpha)
+
+    return ctk.CTkImage(light_image=recolored, dark_image=recolored, size=size)
