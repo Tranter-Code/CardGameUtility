@@ -17,7 +17,7 @@ class SoundThemeManager:
         path = resource_path(os.path.join('assets', 'sounds', 'yugioh', folder_name, file_name))
         try:
             sound = pygame.mixer.Sound(path)
-            sound.set_volume(0.5)
+            sound.set_volume(0.15)
             return sound
         except Exception as e:
             print(f"⚠️ Error loading sound '{file_name}' from '{folder_name}': {e}")

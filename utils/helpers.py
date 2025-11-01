@@ -1,4 +1,6 @@
 import os, json, sys
+from PIL import Image, ImageOps
+import customtkinter as ctk
 
 def resource_path(relative_path):
     """Get absolute path to resource (works for dev and for PyInstaller)."""
@@ -49,7 +51,28 @@ DEFAULT_CONFIG = {
             "button_hover": "#3a3a3a",
             "button_text": "#ffffff",
             "accent": "#00b4d8",
-            "warning": "#ff4b4b"
+            "warning": "#ff4b4b",
+            "fonts": {
+                "heading": {
+                    "family": "Arial",
+                    "size": 20,
+                    "weight": "bold" 
+                },
+                "subheading": {
+                    "family": "Arial",
+                    "size": 16,
+                    "weight": "bold"
+                },
+                "body": {
+                    "family": "Arial",
+                    "size": 14
+                },
+                "lp_counter": {
+                    "family": "Arial",
+                    "size": 36,
+                    "weight": "bold"
+                }
+            }
         },
         "light": {
             "background": "#f4f4f4",
@@ -60,7 +83,28 @@ DEFAULT_CONFIG = {
             "button_hover": "#d0d0d0",
             "button_text": "#000000",
             "accent": "#0077b6",
-            "warning": "#d90429"
+            "warning": "#d90429",
+            "fonts": {
+                "heading": { 
+                    "family": "Arial",
+                    "size": 20,
+                    "weight": "bold" 
+                },
+                "subheading": { 
+                    "family": "Arial",
+                    "size": 16,
+                    "weight": "bold"
+                },
+                "body": {
+                    "family": "Arial",
+                    "size": 14 
+                },
+                "lp_counter": {
+                    "family": "Arial",
+                    "size": 36,
+                    "weight": "bold"
+                }
+            }
         }
     }
 }
@@ -124,3 +168,51 @@ def save_settings(new_data: dict):
         print(f"✅ Settings updated successfully in {config_path}")
     except Exception as e:
         print(f"⚠️ Error saving settings: {e}")
+
+
+def get_theme(config_data: dict):
+    theme = {}
+    if config_data["selected_theme"] == "dark":
+        theme = config_data["themes"]["dark"]
+        return theme
+    else:
+        theme = config_data["themes"]["light"]
+        return theme
+
+def build_fonts(selected_theme:dict):
+    font_defs = selected_theme.get("fonts", {})
+    fonts = {}
+
+    for key, props in font_defs.items():
+        fonts[key] = ctk.CTkFont(
+            family=props.get("family", "Arial"),
+            size=props.get("size", 12),
+            weight=props.get("weight", "normal")
+        )
+    return fonts
+
+def load_icon(name: str, size=(24, 24), mode="dark"):
+    path = os.path.join("assets", "icons", f"{name}.png")
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"Icon not found: {path}")
+
+    # Load with alpha
+    img = Image.open(path).convert("RGBA")
+
+    # Split the alpha channel (so we can preserve transparency)
+    r, g, b, alpha = img.split()
+
+    # Convert RGB to grayscale for recoloring
+    gray = ImageOps.grayscale(img)
+
+    if mode == "dark":
+        # Recolor black → white (for dark mode)
+        recolored = ImageOps.colorize(gray, black="white", white="black")
+    else:
+        # Keep original black (for light mode)
+        recolored = ImageOps.colorize(gray, black="black", white="white")
+
+    # Reapply alpha channel so transparency is preserved
+    recolored.putalpha(alpha)
+
+    return ctk.CTkImage(light_image=recolored, dark_image=recolored, size=size)

@@ -18,28 +18,74 @@
         "theme": "Default",
         "sound_paths": {}
     },
+    "volume": 0.3,
+    "selected_theme": "dark",
     "themes": {
         "dark": {
             "background": "#1e1e1e",
             "frame_bg": "#2a2a2a",
-            "text_primary": "#ffffff",
-            "text_secondary": "#00b4d8",
+            "text_primary": "white",
+            "text_secondary": "black",
+            "container_bg": "#3a3a3a",
             "button_bg": "#2c2c2c",
             "button_hover": "#3a3a3a",
             "button_text": "#ffffff",
             "accent": "#00b4d8",
-            "warning": "#ff4b4b"
+            "warning": "#ff4b4b",
+            "fonts": {
+                "heading": {
+                    "family": "Arial",
+                    "size": 20,
+                    "weight": "bold"
+                },
+                "subheading": {
+                    "family": "Arial",
+                    "size": 16,
+                    "weight": "bold"
+                },
+                "body": {
+                    "family": "Arial",
+                    "size": 14
+                },
+                "lp_counter": {
+                    "family": "Arial",
+                    "size": 36,
+                    "weight": "bold"
+                }
+            }
         },
         "light": {
             "background": "#f4f4f4",
             "frame_bg": "#ffffff",
-            "text_primary": "#000000",
-            "text_secondary": "#0077b6",
+            "text_primary": "black",
+            "text_secondary": "white",
+            "container_bg": "#e0e0e0",
             "button_bg": "#e0e0e0",
             "button_hover": "#d0d0d0",
             "button_text": "#000000",
             "accent": "#0077b6",
-            "warning": "#d90429"
+            "warning": "#d90429",
+            "fonts": {
+                "heading": {
+                    "family": "Arial",
+                    "size": 20,
+                    "weight": "bold"
+                },
+                "subheading": {
+                    "family": "Arial",
+                    "size": 16,
+                    "weight": "bold"
+                },
+                "body": {
+                    "family": "Arial",
+                    "size": 14
+                },
+                "lp_counter": {
+                    "family": "Arial",
+                    "size": 36,
+                    "weight": "bold"
+                }
+            }
         }
     }
 }

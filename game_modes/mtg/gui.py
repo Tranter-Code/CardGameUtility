@@ -1,5 +1,4 @@
 import customtkinter as ctk
-import threading
 from game_modes.mtg.game import Game
 from game_modes.mtg.logic import MTGLifeController
 
@@ -9,7 +8,7 @@ class MTGFrame(ctk.CTkFrame):
         self.master = master
         self.config_data = config_data
         self.settings = config_data["mtg"]
-        self.selected_player = None  
+        self.selected_player = None
 
         # Game setup
         self.game = Game(
@@ -39,41 +38,49 @@ class MTGFrame(ctk.CTkFrame):
         # ----------------------------
         # Top Bar
         # ----------------------------
-        top_bar = ctk.CTkFrame(self, fg_color="transparent", height=55)
-        top_bar.pack(fill="x", side="top", pady=(10, 5), padx=10)
+        top_bar = ctk.CTkFrame(self, fg_color="transparent")
+        top_bar.pack(fill="x", side="top", pady=(10, 0), padx=5)
+        top_bar.grid_columnconfigure(0, weight=1)  # left spacer
+        top_bar.grid_columnconfigure(1, weight=3)  # title area
+        top_bar.grid_columnconfigure(2, weight=1)  # right spacer
 
         back_button = ctk.CTkButton(
             top_bar,
-            text="←",
-            text_color="black",
+            text="",
+            image=self.master.icons["back"],
+            text_color=self.master.colour_theme["text_primary"],
             fg_color="transparent",
+            hover_color=self.master.colour_theme["button_hover"],
             font=("Ariel", 16),
             width=40,
             height=40,
             corner_radius=8,
             command=self.master.back_to_main_menu
         )
-        back_button.pack(side="left", padx=5, anchor="w")
+        back_button.grid(row=0, column=0, sticky="w", padx=5)
 
         title_label = ctk.CTkLabel(
             top_bar,
             text="Magic: The Gathering",
-            font=("Arial", 20, "bold"),
+            font=self.master.fonts["heading"],
+            pady = 6
         )
-        title_label.pack(side="left", expand=True, pady=5)
+        title_label.grid(row=0, column=1, padx=5)
 
         settings_button = ctk.CTkButton(
             top_bar,
-            text="⚙",
-            text_color="black",
+            text="",
+            image=self.master.icons["settings"],
+            text_color=self.master.colour_theme["text_primary"],
             fg_color="transparent",
-            font=("Ariel", 20),
+            hover_color=self.master.colour_theme["button_hover"],
+            font=("Arial", 20),
             width=40,
             height=40,
             corner_radius=8,
-            command=lambda: print("Settings clicked")  # Placeholder
+            command=lambda: self.change_screen(self.show_settings_screen)
         )
-        settings_button.pack(side="right", padx=5, anchor="e")
+        settings_button.grid(row=0, column=2, sticky="e", padx=5)
 
         # ----------------------------
         # Reset Button
@@ -99,7 +106,7 @@ class MTGFrame(ctk.CTkFrame):
         # Player 1 frame
         self.p1_frame = ctk.CTkFrame(
             container,
-            fg_color="#373737",
+            fg_color=self.master.colour_theme["container_bg"],
             corner_radius=12,
             width=player_box_size,
             height=player_box_size,
@@ -109,13 +116,19 @@ class MTGFrame(ctk.CTkFrame):
         self.p1_frame.pack_propagate(False)
         self.p1_frame.bind("<Button-1>", lambda e: self.select_player(1))
 
-        ctk.CTkLabel(self.p1_frame, text=self.game.player1.name, font=("Arial", 16, "bold")).pack(pady=(20, 10))
-        ctk.CTkLabel(self.p1_frame, textvariable=self.p1_life, font=("Arial", 36)).pack()
+        ctk.CTkLabel(self.p1_frame,
+                     text=self.game.player1.name,
+                     font=("Arial", 16, "bold"),
+                     text_color=self.master.colour_theme["text_primary"]).pack(pady=(20, 10))
+        ctk.CTkLabel(self.p1_frame,
+                     textvariable=self.p1_life,
+                     font=("Arial", 36),
+                     text_color=self.master.colour_theme["text_primary"]).pack()
 
         # Player 2 frame
         self.p2_frame = ctk.CTkFrame(
             container,
-            fg_color="#373737",
+            fg_color=self.master.colour_theme["container_bg"],
             corner_radius=12,
             width=player_box_size,
             height=player_box_size,
@@ -125,8 +138,14 @@ class MTGFrame(ctk.CTkFrame):
         self.p2_frame.pack_propagate(False)
         self.p2_frame.bind("<Button-1>", lambda e: self.select_player(2))
 
-        ctk.CTkLabel(self.p2_frame, text=self.game.player2.name, font=("Arial", 16, "bold")).pack(pady=(20, 10))
-        ctk.CTkLabel(self.p2_frame, textvariable=self.p2_life, font=("Arial", 36)).pack()
+        ctk.CTkLabel(self.p2_frame,
+                     text=self.game.player2.name,
+                     font=("Arial", 16, "bold"),
+                     text_color=self.master.colour_theme["text_primary"]).pack(pady=(20, 10))
+        ctk.CTkLabel(self.p2_frame,
+                     textvariable=self.p2_life,
+                     font=("Arial", 36),
+                     text_color=self.master.colour_theme["text_primary"]).pack()
 
         # Control area
         control_frame = ctk.CTkFrame(self, fg_color="transparent")
@@ -186,9 +205,9 @@ class MTGFrame(ctk.CTkFrame):
         # DAMAGE: Flash text visibility
         # -----------------------------
         if is_damage:
-            flashes = 6  # number of flickers (even number)
-            visible_color = "white"
-            invisible_color = self.cget("fg_color")  # blend into background
+            flashes = 10  # number of flickers (even number)
+            visible_color = self.master.colour_theme["text_primary"]
+            invisible_color = self.master.colour_theme["container_bg"]  # blend into background
             count = 0
             total_duration = flashes // 2 * animation_duration
 
@@ -201,7 +220,7 @@ class MTGFrame(ctk.CTkFrame):
                     color = visible_color if count % 2 == 0 else invisible_color
                     label_widget.configure(text_color=color)
                     count += 1
-                    self.after(100, flicker)
+                    self.after(70, flicker)
                 else:
                     # Final state — show new value
                     label_widget.configure(text_color=visible_color, text=str(new))
@@ -213,7 +232,7 @@ class MTGFrame(ctk.CTkFrame):
         # -----------------------------
         elif is_heal:
             base_font = ("Arial", 36)
-            pulse_up = 45  # larger size
+            pulse_up = 50  # larger size
             pulse_down = 36  # normal size
             pulses = 3
             count = 0
