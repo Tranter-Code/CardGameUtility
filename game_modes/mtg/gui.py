@@ -1,4 +1,5 @@
 import customtkinter as ctk
+from utils.helpers import save_settings
 from game_modes.mtg.game import Game
 from game_modes.mtg.logic import MTGLifeController
 
@@ -87,81 +88,99 @@ class MTGFrame(ctk.CTkFrame):
         # ----------------------------
         reset_button = ctk.CTkButton(
             self,
-            text="Reset",
+            text="",
+            image=self.master.icons["reset"],
+            fg_color="transparent",
+            hover_color=self.master.colour_theme["button_hover"],
             font=("Arial", 12),
-            width=70,
-            height=20,
-            corner_radius=20,
+            width=40,
+            height=40,
+            corner_radius=8,
             command=self.controller.reset_life
         )
         reset_button.pack(side="top", expand=True)
 
         # ----------------------------
-        # Main Area
+        # Main Area (Players)
         # ----------------------------
-        container = ctk.CTkFrame(self, fg_color="transparent")
-        container.pack(expand=True, fill="both", padx=20, pady=(10, 15))
-        player_box_size = 250
+        main_area = ctk.CTkFrame(self, fg_color="transparent")
+        main_area.pack(expand=True, fill="both", padx=20, pady=(10, 5))
 
-        # Player 1 frame
+        player_box_size = 230
+
+        # --- Player 1 frame ---
         self.p1_frame = ctk.CTkFrame(
-            container,
+            main_area,
             fg_color=self.master.colour_theme["container_bg"],
             corner_radius=12,
             width=player_box_size,
             height=player_box_size,
             border_color="red"
         )
-        self.p1_frame.pack(side="left", expand=True, padx=5, pady=5)
+        self.p1_frame.pack(side="left", expand=True, padx=10, pady=5)
         self.p1_frame.pack_propagate(False)
         self.p1_frame.bind("<Button-1>", lambda e: self.select_player(1))
 
         ctk.CTkLabel(self.p1_frame,
-                     text=self.game.player1.name,
-                     font=("Arial", 16, "bold"),
-                     text_color=self.master.colour_theme["text_primary"]).pack(pady=(20, 10))
+                    text=self.game.player1.name,
+                    font=("Arial", 14, "bold"),
+                    text_color=self.master.colour_theme["text_primary"],
+                    pady=6).pack(pady=(10, 5))
         ctk.CTkLabel(self.p1_frame,
-                     textvariable=self.p1_life,
-                     font=("Arial", 36),
-                     text_color=self.master.colour_theme["text_primary"]).pack()
+                    textvariable=self.p1_life,
+                    font=("Arial", 30),
+                    text_color=self.master.colour_theme["text_primary"]).pack()
 
-        # Player 2 frame
+        # --- Player 2 frame ---
         self.p2_frame = ctk.CTkFrame(
-            container,
+            main_area,
             fg_color=self.master.colour_theme["container_bg"],
             corner_radius=12,
             width=player_box_size,
             height=player_box_size,
             border_color="red"
         )
-        self.p2_frame.pack(side="right", expand=True, padx=5, pady=5)
+        self.p2_frame.pack(side="left", expand=True, padx=10, pady=5)
         self.p2_frame.pack_propagate(False)
         self.p2_frame.bind("<Button-1>", lambda e: self.select_player(2))
 
         ctk.CTkLabel(self.p2_frame,
-                     text=self.game.player2.name,
-                     font=("Arial", 16, "bold"),
-                     text_color=self.master.colour_theme["text_primary"]).pack(pady=(20, 10))
+                    text=self.game.player2.name,
+                    font=("Arial", 14, "bold"),
+                    text_color=self.master.colour_theme["text_primary"],
+                    pady=6).pack(pady=(10, 5))
         ctk.CTkLabel(self.p2_frame,
-                     textvariable=self.p2_life,
-                     font=("Arial", 36),
-                     text_color=self.master.colour_theme["text_primary"]).pack()
+                    textvariable=self.p2_life,
+                    font=("Arial", 30),
+                    text_color=self.master.colour_theme["text_primary"]).pack()
 
-        # Control area
-        control_frame = ctk.CTkFrame(self, fg_color="transparent")
-        control_frame.pack(pady=10)
+        # ----------------------------
+        # Control Bar (below players)
+        # ----------------------------
+        control_bar = ctk.CTkFrame(self, fg_color="transparent")
+        control_bar.pack(fill="x", pady=(10, 15))
 
         self.value_var = ctk.IntVar(value=0)
-        ctk.CTkLabel(control_frame, text="Change:").pack(side="left", padx=5)
-        self.value_label = ctk.CTkLabel(control_frame, textvariable=self.value_var, font=("Arial", 16, "bold"))
+
+        # Label for current value
+        ctk.CTkLabel(control_bar,
+                    text="Change:",
+                    font=("Arial", 14, "bold")).pack(side="left", padx=(20, 5))
+
+        self.value_label = ctk.CTkLabel(control_bar,
+                                        textvariable=self.value_var,
+                                        font=("Arial", 16, "bold"))
         self.value_label.pack(side="left", padx=5)
 
-        
-        ctk.CTkButton(control_frame, text="-", width=40, command=self.decrement).pack(side="left", padx=5)
-        ctk.CTkButton(control_frame, text="Confirm", width=100, command=self.confirm_change).pack(side="left", padx=10)
-        ctk.CTkButton(control_frame, text="+", width=40, command=self.increment).pack(side="left", padx=5)
-        
-    # ----------------------------
+        # Buttons horizontally aligned
+        ctk.CTkButton(control_bar, text="", image=self.master.icons["minus"],
+                    width=50, height=40, command=self.decrement).pack(side="left", padx=10)
+
+        ctk.CTkButton(control_bar, text="Confirm",
+                    width=100, height=40, command=self.confirm_change).pack(side="left", padx=10)
+
+        ctk.CTkButton(control_bar, text="", image=self.master.icons["plus"],
+                    width=50, height=40, command=self.increment).pack(side="left", padx=10)    # ----------------------------
     # Core actions
     # ----------------------------
     def select_player(self, player_num):
@@ -185,7 +204,7 @@ class MTGFrame(ctk.CTkFrame):
         self.value_var.set(0)
 
     # ----------------------------
-    # Helpers
+    # Animation
     # ----------------------------
     def animate_life_change(self, player_num, old, new):
         # Identify target player
@@ -264,3 +283,240 @@ class MTGFrame(ctk.CTkFrame):
     def update_display(self):
         self.p1_life.set(self.game.player1.life)
         self.p2_life.set(self.game.player2.life)
+
+    # ----------------------------
+    # Helpers
+    # ----------------------------
+    def clear_screen(self):
+        for widget in self.winfo_children():
+            widget.destroy()
+
+    def change_screen(self, function):
+        self.clear_screen()
+        function()
+
+    def show_settings_screen(self):
+        # ----------------------------
+        # Top Bar
+        # ----------------------------
+        top_bar = ctk.CTkFrame(self, fg_color="transparent")
+        top_bar.pack(fill="x", side="top", pady=(10, 0), padx=5)
+        top_bar.grid_columnconfigure(0, weight=1)
+        top_bar.grid_columnconfigure(1, weight=3)
+        top_bar.grid_columnconfigure(2, weight=1)
+
+        # ← Back Button
+        back_button = ctk.CTkButton(
+            top_bar,
+            text="",
+            image=self.master.icons["back"],
+            text_color=self.master.colour_theme["text_primary"],
+            fg_color="transparent",
+            hover_color=self.master.colour_theme["button_hover"],
+            width=40,
+            height=40,
+            corner_radius=8,
+            command=lambda: self.change_screen(self.build_ui)
+        )
+        back_button.grid(row=0, column=0, sticky="w", padx=5)
+
+        # 🏷️ Title Label
+        title_label = ctk.CTkLabel(
+            top_bar,
+            text="Settings",
+            font=self.master.fonts["heading"],
+            pady=6
+        )
+        title_label.grid(row=0, column=1, padx=5)
+
+        # Right Placeholder (non-interactive, keeps title centered)
+        placeholder = ctk.CTkLabel(top_bar, text="", width=40)
+        placeholder.grid(row=0, column=2, sticky="e", padx=5)
+
+        # ----------------------------
+        # Settings Content 
+        # ----------------------------
+        content = ctk.CTkFrame(self, fg_color="transparent")
+        content.pack(expand=True, fill="both", padx=20, pady=12)
+
+        def add_row(label_text, widget_factory, stretch_right=False):
+            row = ctk.CTkFrame(content, fg_color="transparent")
+            row.pack(fill="x", pady=6, padx=20)
+
+            label = ctk.CTkLabel(row, text=label_text, font=self.master.fonts["body"], pady=6)
+            label.pack(side="left")
+
+            widget = widget_factory(row)
+            if stretch_right:
+                widget.pack(side="right", fill="x", expand=True)
+            else:
+                widget.pack(side="right")
+
+        def add_separator(text):
+            sep = ctk.CTkLabel(
+                content,
+                text=text,
+                font=self.master.fonts["body"],
+                text_color=self.master.colour_theme["text_primary"],
+                pady=6
+            )
+            sep.pack(fill="x", pady=(25, 5))
+
+        # ----------------------------
+        # 🔹 Global Settings
+        # ----------------------------
+
+        # --- Appearance (Dark / Light)
+        def make_theme_switch(parent):
+            switch = ctk.CTkSwitch(parent, text="")
+            def on_toggle():
+                # toggle app theme using your existing API
+                self.master.toggle_theme(switch, lambda: self.change_screen(self.show_settings_screen))
+            switch.configure(command=on_toggle)
+            if self.master.config_data["global"]["selected_theme"] == "dark":
+                switch.select()
+            return switch
+
+        add_row("Appearance (Dark Mode)", make_theme_switch)
+
+        # --- Volume Slider
+        def make_volume_slider(parent):
+            slider = ctk.CTkSlider(
+                parent,
+                from_=0,
+                to=1,
+                number_of_steps=100,
+            )
+            slider.set(self.master.config_data["global"].get("volume", 1.0))
+
+            # Save current value on release
+            def on_release(event):
+                value = round(slider.get(), 2)
+                self.master.set_volume(value)  # save to config + update global volume
+                if hasattr(self, "sfx") and hasattr(self.sfx, "sounds"):
+                    # Apply new volume to all loaded sounds
+                    for sound in self.sfx.sounds.values():
+                        sound.set_volume(value)
+
+            # Bind left mouse release to commit
+            slider.bind("<ButtonRelease-1>", on_release)
+
+            return slider
+        add_row("Sound Volume", make_volume_slider, stretch_right=True)
+
+        # ----------------------------
+        # 🔹 Magic: The Gathering Settings
+        # ----------------------------
+        add_separator("------------------------------------------ Magic: The Gathering ------------------------------------------")
+
+        # --- Player Names ---
+        add_row("Player Names", lambda parent: ctk.CTkButton(
+            parent,
+            text="Edit",
+            width=90,
+            command= self.open_name_editor
+        ))
+
+        # --- Starting Life Total ---
+        add_row("Starting Life", lambda parent: ctk.CTkButton(
+            parent,
+            text="Edit",
+            width=90,
+            command= self.open_starting_life_editor
+        ))
+    
+    # ----------------------------
+    # Player editing popups
+    # ----------------------------
+    def open_name_editor(self):
+        popup = ctk.CTkToplevel(self)
+        popup.title("Edit Player Names")
+        popup.geometry("300x260")
+        popup.resizable(False, False)
+        popup.grab_set()
+
+        ctk.CTkLabel(popup, text="Edit Player Names", font=("Arial", 14, "bold")).pack(pady=10)
+
+        # Player 1
+        ctk.CTkLabel(popup, text="Player 1 Name:").pack()
+        p1_entry = ctk.CTkEntry(popup, width=200, justify="center")
+        p1_entry.insert(0, self.game.player1.name)
+        p1_entry.pack(pady=5)
+
+        # Player 2
+        ctk.CTkLabel(popup, text="Player 2 Name:").pack()
+        p2_entry = ctk.CTkEntry(popup, width=200, justify="center")  
+        p2_entry.insert(0, self.game.player2.name)
+        p2_entry.pack(pady=5)
+
+        def save_names():
+            name1 = p1_entry.get().strip() or "Player 1"
+            name2 = p2_entry.get().strip() or "Player 2"
+            self.game.player1.name = name1
+            self.game.player2.name = name2
+            self.settings["player1_name"] = name1
+            self.settings["player2_name"] = name2
+
+            # Save and refresh
+            save_settings({"mtg": self.settings})
+            popup.destroy()
+
+        ctk.CTkButton(popup, text="Save", command=save_names).pack(pady=15)
+        popup.bind("<Return>", lambda e: save_names())
+
+    def open_starting_life_editor(self):
+        """Popup for changing the starting life total in Magic: The Gathering."""
+        popup = ctk.CTkToplevel(self)
+        popup.title("Edit Starting Life Total")
+        popup.geometry("300x180")
+        popup.resizable(False, False)
+        popup.grab_set()
+
+        # --- Title ---
+        ctk.CTkLabel(
+            popup,
+            text="Change Starting Life",
+            font=self.master.fonts["heading"]
+        ).pack(pady=10)
+
+        ctk.CTkLabel(popup, text="Starting Total Life:").pack()
+
+        # --- Entry Field ---
+        life_entry = ctk.CTkEntry(popup, width=200, justify="center")
+        life_entry.insert(0, str(self.game.starting_life))
+        life_entry.pack(pady=5)
+
+        # --- Save Handler ---
+        def save_life_value():
+            try:
+                new_life = int(life_entry.get())
+                if new_life <= 0:
+                    raise ValueError
+
+                # Update game state
+                self.game.starting_life = new_life
+                self.game.reset()
+
+                # Update display variables (labels)
+                self.p1_life.set(str(self.game.player1.life))
+                self.p2_life.set(str(self.game.player2.life))
+
+                # Save to config under "mtg"
+                self.settings["starting_life"] = new_life
+                from utils.helpers import save_settings
+                save_settings({"mtg": self.settings})
+
+                # Optional: play refresh sound if available
+                if hasattr(self, "sfx"):
+                    self.sfx.play_sound("Refresh")
+                popup.destroy()
+
+            except ValueError:
+                # Simple input validation
+                life_entry.delete(0, ctk.END)
+                life_entry.insert(0, "Invalid")
+
+        # --- Buttons ---
+        ctk.CTkButton(popup, text="Save", command=save_life_value).pack(pady=15)
+        popup.bind("<Return>", lambda e: save_life_value())
+

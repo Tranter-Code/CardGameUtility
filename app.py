@@ -17,8 +17,11 @@ class CardGameApp(ctk.CTk):
         self.colour_theme = get_theme(self.config_data)
         self.fonts = build_fonts(self.colour_theme)
         self.icons = {
-            "back": load_icon("arrow_left", size=(20,20), mode=self.config_data["global"]["selected_theme"]),
-            "settings": load_icon("settings", size=(20,20), mode=self.config_data["global"]["selected_theme"])
+            "back": load_icon("arrow_left", size=(17,17), mode=self.config_data["global"]["selected_theme"]),
+            "settings": load_icon("settings", size=(17,17), mode=self.config_data["global"]["selected_theme"]),
+            "reset": load_icon("reset", size=(17,17), mode=self.config_data["global"]["selected_theme"]),
+            "plus": load_icon("plus", size=(17,17)),
+            "minus": load_icon("minus", size=(17,17))
         }
         ctk.set_appearance_mode(self.config_data["global"]["selected_theme"])
         self.current_frame = None
@@ -201,13 +204,27 @@ class CardGameApp(ctk.CTk):
         volume_label = ctk.CTkLabel(volume_row, text="Volume", font=self.fonts["body"])
         volume_label.pack(side="left", anchor="w")
 
-        volume_slider = ctk.CTkSlider(
-            volume_row,
-            from_=0,
-            to=1,
-            number_of_steps=50,
-            command=lambda v: self.set_volume(v)
-        )
+        # --- Volume Slider
+        def make_volume_slider(parent):
+            slider = ctk.CTkSlider(
+                parent,
+                from_=0,
+                to=1,
+                number_of_steps=100,
+            )
+            slider.set(self.config_data["global"].get("volume", 1.0))
+
+            # Save current value on release
+            def on_release(event):
+                value = round(slider.get(), 2)
+                self.set_volume(value)  # save to config + update global volume
+
+            # Bind left mouse release to commit
+            slider.bind("<ButtonRelease-1>", on_release)
+
+            return slider
+
+        volume_slider = make_volume_slider(volume_row)
         volume_slider.set(self.config_data["global"].get("volume", 0.5))
         volume_slider.pack(side="right", fill="x", expand=True)
 
@@ -221,7 +238,10 @@ class CardGameApp(ctk.CTk):
         ctk.set_appearance_mode(theme)
         self.icons = {
             "back": load_icon("arrow_left", size=(20,20), mode=theme),
-            "settings": load_icon("settings", size=(20,20), mode=theme)
+            "settings": load_icon("settings", size=(20,20), mode=theme),
+            "reset": load_icon("reset", size=(17,17), mode=theme),
+            "plus": load_icon("plus", size=(17,17)),
+            "minus": load_icon("minus", size=(17,17))
         }
         self.colour_theme = get_theme(self.config_data)
         function()

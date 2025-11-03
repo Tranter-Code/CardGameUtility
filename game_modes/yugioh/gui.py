@@ -172,7 +172,7 @@ class YuGiOhFrame(ctk.CTkFrame):
             row = ctk.CTkFrame(content, fg_color="transparent")
             row.pack(fill="x", pady=6, padx=20)
 
-            label = ctk.CTkLabel(row, text=label_text, font=self.master.fonts["body"])
+            label = ctk.CTkLabel(row, text=label_text, font=self.master.fonts["body"], pady=6)
             label.pack(side="left")
 
             widget = widget_factory(row)
@@ -190,7 +190,7 @@ class YuGiOhFrame(ctk.CTkFrame):
                 pady=6
             )
             sep.pack(fill="x", pady=(25, 5))
-
+        
         # --- Appearance (Dark / Light)
         def make_theme_switch(parent):
             switch = ctk.CTkSwitch(parent, text="")
@@ -207,17 +207,30 @@ class YuGiOhFrame(ctk.CTkFrame):
 
         add_row("Appearance (Dark Mode)", make_theme_switch)
 
-        # --- Sound Volume (slider stretches to the right)
+        # --- Volume Slider
         def make_volume_slider(parent):
             slider = ctk.CTkSlider(
                 parent,
                 from_=0,
                 to=1,
-                number_of_steps=100,  # 0.01 precision
-                command=lambda v: self.master.set_volume(v)
+                number_of_steps=100,
             )
             slider.set(self.master.config_data["global"].get("volume", 1.0))
+
+            # Save current value on release
+            def on_release(event):
+                value = round(slider.get(), 2)
+                self.master.set_volume(value)  # save to config + update global volume
+                if hasattr(self, "sfx") and hasattr(self.sfx, "sounds"):
+                    # Apply new volume to all loaded sounds
+                    for sound in self.sfx.sounds.values():
+                        sound.set_volume(value)
+
+            # Bind left mouse release to commit
+            slider.bind("<ButtonRelease-1>", on_release)
+
             return slider
+
         add_row("Sound Volume", make_volume_slider, stretch_right=True)
 
         add_separator("---------------------------------------- Yu-Gi-Oh ----------------------------------------")
@@ -292,13 +305,13 @@ class YuGiOhFrame(ctk.CTkFrame):
 
         # Player 1
         ctk.CTkLabel(popup, text="Player 1 Name:").pack()
-        p1_entry = ctk.CTkEntry(popup, width=200)
+        p1_entry = ctk.CTkEntry(popup, width=200, justify="center")
         p1_entry.insert(0, self.game.player1.name)
         p1_entry.pack(pady=5)
 
         # Player 2
         ctk.CTkLabel(popup, text="Player 2 Name:").pack()
-        p2_entry = ctk.CTkEntry(popup, width=200)  
+        p2_entry = ctk.CTkEntry(popup, width=200, justify="center")  
         p2_entry.insert(0, self.game.player2.name)
         p2_entry.pack(pady=5)
 
@@ -328,7 +341,7 @@ class YuGiOhFrame(ctk.CTkFrame):
         ctk.CTkLabel(popup, text="Change Starting LP", font=("Arial", 14, "bold")).pack(pady=10)
         ctk.CTkLabel(popup, text="Starting Life Points:").pack()
 
-        lp_entry = ctk.CTkEntry(popup, width=200)
+        lp_entry = ctk.CTkEntry(popup, width=200, justify="center")
         lp_entry.insert(0, str(self.game.starting_lp))
         lp_entry.pack(pady=5)
 
