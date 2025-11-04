@@ -1,2 +1,2 @@
-# LifePoints-Tracker
+# Trading Card Game Utility
 
