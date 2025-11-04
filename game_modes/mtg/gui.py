@@ -1,4 +1,5 @@
 import customtkinter as ctk
+from tkinter import messagebox
 from utils.helpers import save_settings
 from game_modes.mtg.game import Game
 from game_modes.mtg.logic import MTGLifeController
@@ -10,6 +11,7 @@ class MTGFrame(ctk.CTkFrame):
         self.config_data = config_data
         self.settings = config_data["mtg"]
         self.selected_player = None
+        self.temp_value = ctk.IntVar(value=0)
 
         # Game setup
         self.game = Game(
@@ -96,7 +98,7 @@ class MTGFrame(ctk.CTkFrame):
             width=40,
             height=40,
             corner_radius=8,
-            command=self.controller.reset_life
+            command=self.confirm_reset
         )
         reset_button.pack(side="top", expand=True)
 
@@ -122,14 +124,21 @@ class MTGFrame(ctk.CTkFrame):
         self.p1_frame.bind("<Button-1>", lambda e: self.select_player(1))
 
         ctk.CTkLabel(self.p1_frame,
-                    text=self.game.player1.name,
-                    font=("Arial", 14, "bold"),
-                    text_color=self.master.colour_theme["text_primary"],
-                    pady=6).pack(pady=(10, 5))
+            text=self.game.player1.name,
+            font=("Arial", 14, "bold"),
+            text_color=self.master.colour_theme["text_primary"],
+            pady=6).pack(pady=(10, 5))
         ctk.CTkLabel(self.p1_frame,
-                    textvariable=self.p1_life,
-                    font=("Arial", 30),
-                    text_color=self.master.colour_theme["text_primary"]).pack()
+            textvariable=self.p1_life,
+            font=("Arial", 36),
+            text_color=self.master.colour_theme["text_primary"]).pack()
+        self.p1_pending_label = ctk.CTkLabel(
+            self.p1_frame,
+            text="",
+            font=("Arial", 20, "bold"),
+            text_color="red"
+        )
+        self.p1_pending_label.pack(pady=(5, 0))  # directly below life total
 
         # --- Player 2 frame ---
         self.p2_frame = ctk.CTkFrame(
@@ -145,63 +154,142 @@ class MTGFrame(ctk.CTkFrame):
         self.p2_frame.bind("<Button-1>", lambda e: self.select_player(2))
 
         ctk.CTkLabel(self.p2_frame,
-                    text=self.game.player2.name,
-                    font=("Arial", 14, "bold"),
-                    text_color=self.master.colour_theme["text_primary"],
-                    pady=6).pack(pady=(10, 5))
+            text=self.game.player2.name,
+            font=("Arial", 14, "bold"),
+            text_color=self.master.colour_theme["text_primary"],
+            pady=6).pack(pady=(10, 5))
         ctk.CTkLabel(self.p2_frame,
-                    textvariable=self.p2_life,
-                    font=("Arial", 30),
-                    text_color=self.master.colour_theme["text_primary"]).pack()
+            textvariable=self.p2_life,
+            font=("Arial", 36),
+            text_color=self.master.colour_theme["text_primary"]).pack()
+        self.p2_pending_label = ctk.CTkLabel(self.p2_frame,
+            text="",
+            font=("Arial", 20, "bold"),
+            text_color="red"
+        )
+        self.p2_pending_label.pack(pady=(5, 0))
 
         # ----------------------------
-        # Control Bar (below players)
+        # Control Bar
         # ----------------------------
         control_bar = ctk.CTkFrame(self, fg_color="transparent")
-        control_bar.pack(fill="x", pady=(10, 15))
+        control_bar.pack(pady=(10, 10))
 
-        self.value_var = ctk.IntVar(value=0)
+        # Inner centered layout
+        center_group = ctk.CTkFrame(control_bar, fg_color="transparent")
+        center_group.pack(anchor="center")
 
-        # Label for current value
-        ctk.CTkLabel(control_bar,
-                    text="Change:",
-                    font=("Arial", 14, "bold")).pack(side="left", padx=(20, 5))
+        ctk.CTkButton(center_group, text="", image=self.master.icons["minus"],
+                    width=50, height=40, command=self.decrement).grid(row=0, column=0, padx=10)
 
-        self.value_label = ctk.CTkLabel(control_bar,
-                                        textvariable=self.value_var,
-                                        font=("Arial", 16, "bold"))
-        self.value_label.pack(side="left", padx=5)
+        ctk.CTkButton(center_group, text="Confirm",
+                    width=100, height=40, font=("Arial", 14, "bold"),
+                    command=self.confirm_change).grid(row=0, column=1, padx=10)
 
-        # Buttons horizontally aligned
-        ctk.CTkButton(control_bar, text="", image=self.master.icons["minus"],
-                    width=50, height=40, command=self.decrement).pack(side="left", padx=10)
-
-        ctk.CTkButton(control_bar, text="Confirm",
-                    width=100, height=40, command=self.confirm_change).pack(side="left", padx=10)
-
-        ctk.CTkButton(control_bar, text="", image=self.master.icons["plus"],
-                    width=50, height=40, command=self.increment).pack(side="left", padx=10)    # ----------------------------
+        ctk.CTkButton(center_group, text="", image=self.master.icons["plus"],
+                    width=50, height=40, command=self.increment).grid(row=0, column=2, padx=10)
+        
+    # ----------------------------
     # Core actions
     # ----------------------------
     def select_player(self, player_num):
-        """Highlight selected player."""
+        if self.selected_player == player_num:
+            return
+    
         self.selected_player = player_num
+
+        # Update borders
         self.p1_frame.configure(border_width=2 if player_num == 1 else 0)
         self.p2_frame.configure(border_width=2 if player_num == 2 else 0)
 
+        # Reset both pending labels
+        self.p1_pending_label.configure(text="")
+        self.p2_pending_label.configure(text="")
+
+        # Start pending value
+        self.temp_value.set(-1)
+
+        # Default to red (since -1 is the starting value)
+        default_color = "red"
+
+        # Display it under the correct player
+        if player_num == 1:
+            self.p1_pending_label.configure(text="-1", text_color=default_color)
+        elif player_num == 2:
+            self.p2_pending_label.configure(text="-1", text_color=default_color)
+
     def increment(self):
-        self.value_var.set(self.value_var.get() + 1)
+        if not self.selected_player:
+            return
+
+        current = self.temp_value.get()
+        new_val = current + 1
+
+        # Skip 0 → jump from -1 to +1
+        if current == -1:
+            new_val = 1
+
+        # Clamp to reasonable range (optional)
+        if new_val > 99:
+            new_val = 99
+
+        self.temp_value.set(new_val)
+        self.update_pending_label()
 
     def decrement(self):
-        self.value_var.set(self.value_var.get() - 1)
+        if not self.selected_player:
+            return
+
+        current = self.temp_value.get()
+        new_val = current - 1
+
+        # Skip 0 → jump from +1 to -1
+        if current == 1:
+            new_val = -1
+
+        if new_val < -99:
+            new_val = -99
+
+        self.temp_value.set(new_val)
+        self.update_pending_label()
+    
+    def update_pending_label(self):
+        value = self.temp_value.get()
+
+        # Choose colour
+        if value < 0:
+            color = "red"
+        elif value > 0:
+            color = "green"
+        else:
+            color = self.master.colour_theme["text_primary"]  # neutral or hidden
+
+        # Update the correct label
+        if self.selected_player == 1:
+            self.p1_pending_label.configure(text=str(value), text_color=color)
+            self.p2_pending_label.configure(text="")
+        elif self.selected_player == 2:
+            self.p2_pending_label.configure(text=str(value), text_color=color)
+            self.p1_pending_label.configure(text="")
 
     def confirm_change(self):
-        """Apply the current value to the selected player."""
         if not self.selected_player:
-            return  # No player selected
-        value = self.value_var.get()
+            return
+
+        value = self.temp_value.get()
         self.controller.change_life(self.selected_player, value)
-        self.value_var.set(0)
+        self.temp_value.set(0)
+
+        # Clear pending indicators
+        self.p1_pending_label.configure(text="")
+        self.p2_pending_label.configure(text="")
+
+        # Remove highlight from both players
+        self.p1_frame.configure(border_width=0)
+        self.p2_frame.configure(border_width=0)
+
+        # Clear selection
+        self.selected_player = None
 
     # ----------------------------
     # Animation
@@ -251,7 +339,7 @@ class MTGFrame(ctk.CTkFrame):
         # -----------------------------
         elif is_heal:
             base_font = ("Arial", 36)
-            pulse_up = 50  # larger size
+            pulse_up = 42  # larger size
             pulse_down = 36  # normal size
             pulses = 3
             count = 0
@@ -294,6 +382,14 @@ class MTGFrame(ctk.CTkFrame):
     def change_screen(self, function):
         self.clear_screen()
         function()
+
+    def clear_selection(self):
+        self.selected_player = None
+        self.p1_frame.configure(border_width=0)
+        self.p2_frame.configure(border_width=0)
+        self.p1_pending_label.configure(text="")
+        self.p2_pending_label.configure(text="")
+        self.temp_value = ctk.IntVar(value=0)
 
     def show_settings_screen(self):
         # ----------------------------
@@ -520,3 +616,14 @@ class MTGFrame(ctk.CTkFrame):
         ctk.CTkButton(popup, text="Save", command=save_life_value).pack(pady=15)
         popup.bind("<Return>", lambda e: save_life_value())
 
+
+    def confirm_reset(self):
+        """Ask the user for confirmation before resetting the game."""
+        answer = messagebox.askyesno("Confirm Reset", "Are you sure you want to reset the game?")
+        
+        if answer:
+            # Perform reset
+            self.controller.reset_life()
+            self.clear_selection()
+            self.p1_pending_label.configure(text="")
+            self.p2_pending_label.configure(text="")
