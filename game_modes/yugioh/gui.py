@@ -95,6 +95,23 @@ class YuGiOhFrame(ctk.CTkFrame):
         )
         settings_button.grid(row=0, column=2, sticky="e", padx=5)
 
+        # ----------------------------
+        # Reset Button
+        # ----------------------------
+        reset_button = ctk.CTkButton(
+            self,
+            text="",
+            image=self.master.icons["reset"],
+            fg_color="transparent",
+            hover_color=self.master.colour_theme["button_hover"],
+            font=("Arial", 12),
+            width=40,
+            height=40,
+            corner_radius=8,
+            command=self.lp_controller.reset_all_lp
+        )
+        reset_button.pack(side="top")
+
         # Player 1
         ctk.CTkLabel(self, text=self.game.player1.name, font=("Arial", 14, "bold"), pady=6).pack(pady=(10, 0))
         ctk.CTkLabel(self, textvariable=self.lp1_var, font=("Arial", 20)).pack()
@@ -287,7 +304,6 @@ class YuGiOhFrame(ctk.CTkFrame):
             }
 
         save_settings({"yugioh": self.settings})
-        self.master.title(f"Yu-Gi-Oh! Life Points — Theme: {selected}")
         self.sfx.play_sound("Refresh")
 
 
@@ -436,7 +452,6 @@ class YuGiOhFrame(ctk.CTkFrame):
             save_settings({"yugioh": self.settings})
             self.sfx.sounds = self.sfx.load_theme("Custom")
 
-            self.master.title("Yu-Gi-Oh! Life Points — Theme: Custom")
             if hasattr(self, 'theme_var'):
                 self.theme_var.set("Custom")
 

@@ -36,7 +36,7 @@ class LifePointController:
             self.game.player1.reset_lp(self.game.starting_lp)
             self.game.player2.reset_lp(self.game.starting_lp)
             self.gui.update_display()
-            self.sfx.play_sound("refresh")
+            self.sfx.play_sound("Refresh")
 
     def get_player(self, player_num):
         return self.gui.game.player1 if player_num == 1 else self.gui.game.player2
