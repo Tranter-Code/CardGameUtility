@@ -2,11 +2,15 @@ import os, json, sys
 from PIL import Image, ImageOps
 import customtkinter as ctk
 
-def resource_path(relative_path):
-    """Get absolute path to resource (works for dev and for PyInstaller)."""
-    if hasattr(sys, '_MEIPASS'):
-        return os.path.join(sys._MEIPASS, relative_path)
-    return os.path.join(os.path.abspath("."), relative_path)
+def resource_path(relative_path: str):
+    try:
+        # Running in packaged .exe
+        base_path = sys._MEIPASS  
+    except Exception:
+        # Running in development → go to project root
+        base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+    return os.path.join(base_path, relative_path)
 
 def get_config_path(filename="config.json"):
     """Return the config path outside of the packaged app bundle."""
@@ -208,27 +212,25 @@ def build_fonts(selected_theme:dict):
     return fonts
 
 def load_icon(name: str, size=(24, 24), mode="dark"):
-    path = os.path.join("assets", "icons", f"{name}.png")
+
+    path = resource_path(os.path.join("assets", "icons", f"{name}.png"))
     if not os.path.exists(path):
         raise FileNotFoundError(f"Icon not found: {path}")
 
-    # Load with alpha
     img = Image.open(path).convert("RGBA")
 
-    # Split the alpha channel (so we can preserve transparency)
-    r, g, b, alpha = img.split()
+    # --- Extract alpha channel ---
+    alpha = img.getchannel("A")
 
-    # Convert RGB to grayscale for recoloring
-    gray = ImageOps.grayscale(img)
-
+    # --- Convert color ---
     if mode == "dark":
-        # Recolor black → white (for dark mode)
-        recolored = ImageOps.colorize(gray, black="white", white="black")
+        # White icon
+        recolored = Image.new("RGBA", img.size, (255, 255, 255, 255))
     else:
-        # Keep original black (for light mode)
-        recolored = ImageOps.colorize(gray, black="black", white="white")
+        # Black icon
+        recolored = Image.new("RGBA", img.size, (0, 0, 0, 255))
 
-    # Reapply alpha channel so transparency is preserved
+    # --- Reapply alpha to keep transparency ---
     recolored.putalpha(alpha)
 
     return ctk.CTkImage(light_image=recolored, dark_image=recolored, size=size)
