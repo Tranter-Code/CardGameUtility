@@ -14,6 +14,10 @@ class YuGiOhFrame(ctk.CTkFrame):
         self.current_overrides = self.settings.get("sound_paths", {})
         self.current_theme = self.settings["theme"]
         self.messagebox = messagebox
+        self.selected_player = None
+        self.pending_operation = None
+        self.selected_operation = None
+
 
         # Theme map (for sound folders)
         self.theme_map = {
@@ -52,89 +56,107 @@ class YuGiOhFrame(ctk.CTkFrame):
         # Top Bar
         # ----------------------------
         top_bar = ctk.CTkFrame(self, fg_color="transparent")
-        top_bar.pack(fill="x", side="top", pady=(10, 0), padx=5)
-        top_bar.grid_columnconfigure(0, weight=1)  # left spacer
-        top_bar.grid_columnconfigure(1, weight=3)  # title area
-        top_bar.grid_columnconfigure(2, weight=1)  # right spacer
+        top_bar.pack(fill="x", pady=(10, 0), padx=5)
+        top_bar.grid_columnconfigure(0, weight=1)
+        top_bar.grid_columnconfigure(1, weight=3)
+        top_bar.grid_columnconfigure(2, weight=1)
 
-        back_button = ctk.CTkButton(
-            top_bar,
-            text="",
-            image=self.master.icons["back"],
-            text_color=self.master.colour_theme["text_primary"],
-            fg_color="transparent",
-            hover_color=self.master.colour_theme["button_hover"],
-            font=("Ariel", 16),
-            width=40,
-            height=40,
-            corner_radius=8,
+        ctk.CTkButton(
+            top_bar, text="", image=self.master.icons["back"],
+            fg_color="transparent", hover_color=self.master.colour_theme["button_hover"],
+            width=40, height=40,
             command=self.master.back_to_main_menu
-        )
-        back_button.grid(row=0, column=0, sticky="w", padx=5)
+        ).grid(row=0, column=0, sticky="w")
 
-        title_label = ctk.CTkLabel(
-            top_bar,
-            text="Yu-Gi-Oh!",
-            font=self.master.fonts["heading"],
-            pady = 6
-        )
-        title_label.grid(row=0, column=1, padx=5)
+        ctk.CTkLabel(top_bar, text="Yu-Gi-Oh!", font=self.master.fonts["heading"]).grid(row=0, column=1)
 
-        settings_button = ctk.CTkButton(
-            top_bar,
-            text="",
-            image=self.master.icons["settings"],
-            text_color=self.master.colour_theme["text_primary"],
-            fg_color="transparent",
-            hover_color=self.master.colour_theme["button_hover"],
-            font=("Arial", 20),
-            width=40,
-            height=40,
-            corner_radius=8,
+        ctk.CTkButton(
+            top_bar, text="", image=self.master.icons["settings"],
+            fg_color="transparent", hover_color=self.master.colour_theme["button_hover"],
+            width=40, height=40,
             command=lambda: self.change_screen(self.show_settings_screen)
-        )
-        settings_button.grid(row=0, column=2, sticky="e", padx=5)
+        ).grid(row=0, column=2, sticky="e")
 
         # ----------------------------
-        # Reset Button
+        # Player Display Area
         # ----------------------------
-        reset_button = ctk.CTkButton(
-            self,
-            text="",
-            image=self.master.icons["reset"],
-            fg_color="transparent",
-            hover_color=self.master.colour_theme["button_hover"],
-            font=("Arial", 12),
-            width=40,
-            height=40,
-            corner_radius=8,
-            command=self.lp_controller.reset_all_lp
+        player_area = ctk.CTkFrame(self, fg_color="transparent")
+        player_area.pack(pady=20)
+
+        box_w, box_h = 260, 120
+
+        # Player 1 Box
+        self.p1_frame = ctk.CTkFrame(
+            player_area, width=box_w, height=box_h,
+            fg_color=self.master.colour_theme["container_bg"],
+            border_width=0, corner_radius=12
         )
-        reset_button.pack(side="top")
+        self.p1_frame.pack(side="left", padx=15)
+        self.p1_frame.pack_propagate(False)
+        self.p1_frame.bind("<Button-1>", lambda e: self.select_player(1))
 
-        # Player 1
-        ctk.CTkLabel(self, text=self.game.player1.name, font=("Arial", 14, "bold"), pady=6).pack(pady=(10, 0))
-        ctk.CTkLabel(self, textvariable=self.lp1_var, font=("Arial", 20)).pack()
-        p1_frame = ctk.CTkFrame(self)
-        p1_frame.pack(pady=5)
-        ctk.CTkButton(p1_frame, text="Damage -",
-                      command=lambda: self.change_screen(lambda: self.show_calc_screen(1, "damage"))).pack(side="left", padx=2)
-        ctk.CTkButton(p1_frame, text="Heal +",
-                      command=lambda: self.change_screen(lambda: self.show_calc_screen(1, "heal"))).pack(side="left", padx=2)
-        ctk.CTkButton(p1_frame, text="Halve",
-                      command=lambda: self.lp_controller.halve_lp(1)).pack(side="left", padx=2)
+        ctk.CTkLabel(self.p1_frame, text=self.game.player1.name, font=("Arial", 16, "bold")).pack(pady=(8, 5))
+        ctk.CTkLabel(self.p1_frame, textvariable=self.lp1_var, font=("Arial", 32)).pack()
 
-        # Player 2
-        ctk.CTkLabel(self, text=self.game.player2.name, font=("Arial", 14, "bold"), pady=6).pack(pady=(15, 0))
-        ctk.CTkLabel(self, textvariable=self.lp2_var, font=("Arial", 20)).pack()
-        p2_frame = ctk.CTkFrame(self)
-        p2_frame.pack(pady=5)
-        ctk.CTkButton(p2_frame, text="Damage -",
-                      command=lambda: self.change_screen(lambda: self.show_calc_screen(2, "damage"))).pack(side="left", padx=2)
-        ctk.CTkButton(p2_frame, text="Heal +",
-                      command=lambda: self.change_screen(lambda: self.show_calc_screen(2, "heal"))).pack(side="left", padx=2)
-        ctk.CTkButton(p2_frame, text="Halve",
-                      command=lambda: self.lp_controller.halve_lp(2)).pack(side="left", padx=2)
+        # Player 2 Box
+        self.p2_frame = ctk.CTkFrame(
+            player_area, width=box_w, height=box_h,
+            fg_color=self.master.colour_theme["container_bg"],
+            border_width=0, corner_radius=12
+        )
+        self.p2_frame.pack(side="left", padx=15)
+        self.p2_frame.pack_propagate(False)
+        self.p2_frame.bind("<Button-1>", lambda e: self.select_player(2))
+
+        ctk.CTkLabel(self.p2_frame, text=self.game.player2.name, font=("Arial", 16, "bold")).pack(pady=(8, 5))
+        ctk.CTkLabel(self.p2_frame, textvariable=self.lp2_var, font=("Arial", 32)).pack()
+
+        # ----------------------------
+        # Control Bar
+        # ----------------------------
+        control = ctk.CTkFrame(self, fg_color="transparent")
+        control.pack(pady=15)
+
+        self.btn_damage = ctk.CTkButton(control, text="Damage", width=90,
+            command=lambda: self.select_operation("damage"))
+        self.btn_damage.grid(row=0, column=0, padx=6)
+
+        self.btn_heal = ctk.CTkButton(control, text="Heal", width=90,
+            command=lambda: self.select_operation("heal"))
+        self.btn_heal.grid(row=0, column=1, padx=6)
+
+        self.btn_halve = ctk.CTkButton(control, text="Halve", width=90,
+            command=lambda: self.select_operation("halve"))
+        self.btn_halve.grid(row=0, column=2, padx=6)
+
+        self.calc_entry = ctk.CTkEntry(control, width=80)
+        self.calc_entry.grid(row=1, column=1, pady=(8, 0))
+        self.calc_entry.grid_remove()
+
+        self.confirm_button = ctk.CTkButton(control, text="Confirm", width=120,
+            command=self.finish_calc)
+        self.confirm_button.grid(row=2, column=1, pady=10)
+        self.confirm_button.configure(state="disabled")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     # ----------------------------
     # Settings screen 
@@ -574,3 +596,115 @@ class YuGiOhFrame(ctk.CTkFrame):
         self.lp1_var.set(str(self.game.player1.lp))
         self.lp2_var.set(str(self.game.player2.lp))
 
+
+    def select_operation(self, op):
+        if not self.selected_player:
+            return  # must select player first
+
+        self.pending_operation = op
+
+        # Reset highlighting
+        for btn in [self.btn_damage, self.btn_heal, self.btn_halve]:
+            btn.configure(fg_color="transparent")
+
+        # Highlight selected button
+        if op == "damage":
+            self.btn_damage.configure(fg_color=self.master.colour_theme["button_hover"])
+        elif op == "heal":
+            self.btn_heal.configure(fg_color=self.master.colour_theme["button_hover"])
+        elif op == "halve":
+            self.btn_halve.configure(fg_color=self.master.colour_theme["button_hover"])
+
+        # Show entry only for heal/damage
+        if op in ("damage", "heal"):
+            self.calc_entry.delete(0, ctk.END)
+            self.calc_entry.pack(side="left", padx=10)
+            self.calc_entry.focus()
+        else:
+            self.calc_entry.pack_forget()  # halve requires no input
+
+    def finish_calc(self):
+        if not self.selected_player or not self.selected_operation:
+            return
+
+        player_num = self.selected_player
+        op = self.selected_operation
+
+        # Run operation
+        if op == "damage":
+            try:
+                value = int(self.calc_entry.get())
+                self.lp_controller.change_lp(player_num, -abs(value))
+            except ValueError:
+                self.calc_entry.delete(0, ctk.END)
+                self.calc_entry.insert(0, "Invalid")
+                return
+
+        elif op == "heal":
+            try:
+                value = int(self.calc_entry.get())
+                self.lp_controller.change_lp(player_num, abs(value))
+            except ValueError:
+                self.calc_entry.delete(0, ctk.END)
+                self.calc_entry.insert(0, "Invalid")
+                return
+
+        elif op == "halve":
+            self.lp_controller.halve_lp(player_num)
+
+        # ----------------------------
+        # RESET UI STATE
+        # ----------------------------
+        self.selected_player = None
+        self.selected_operation = None
+
+        # Remove selection highlight
+        self.p1_frame.configure(border_width=0)
+        self.p2_frame.configure(border_width=0)
+
+        # Hide entry box
+        self.calc_entry.grid_remove()
+
+        # Reset operation button highlight
+        self.btn_damage.configure(fg_color="transparent")
+        self.btn_heal.configure(fg_color="transparent")
+        self.btn_halve.configure(fg_color="transparent")
+
+        # Disable confirm button again
+        self.update_confirm_state()
+
+
+    def select_player(self, player_num):
+        if self.selected_player == player_num:
+            return  # prevent re-selecting same player
+
+        self.selected_player = player_num
+        self.p1_frame.configure(border_width=2 if player_num == 1 else 0)
+        self.p2_frame.configure(border_width=2 if player_num == 2 else 0)
+
+        self.update_confirm_state()
+
+    def select_operation(self, op):
+        self.selected_operation = op
+
+        # Highlight selected operation
+        self.btn_damage.configure(fg_color=("dodgerblue3" if op=="damage" else "transparent"))
+        self.btn_heal.configure(fg_color=("forestgreen" if op=="heal" else "transparent"))
+        self.btn_halve.configure(fg_color=("goldenrod" if op=="halve" else "transparent"))
+
+        # Show entry only for damage/heal
+        if op in ("damage", "heal"):
+            self.calc_entry.delete(0, ctk.END)
+            self.calc_entry.grid()
+            self.calc_entry.focus_set()
+        else:
+            self.calc_entry.grid_remove()
+
+        self.update_confirm_state()
+
+    def update_confirm_state(self):
+        """Enable confirm only if both player and operation are selected."""
+        if self.selected_player and self.selected_operation:
+            self.confirm_button.configure(state="normal")
+        else:
+            self.confirm_button.configure(state="disabled")
