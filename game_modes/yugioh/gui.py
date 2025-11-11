@@ -48,25 +48,46 @@ class YuGiOhFrame(ctk.CTkFrame):
         self.sfx.play_sound("Refresh")
 
 
+
+
+
+
+
+
     # ----------------------------
     # Main game screen
     # ----------------------------
+
+
+    # --------------------------------
+    # Draw the user interface --------
+    # --------------------------------
+
     def show_main_screen(self):
         # ----------------------------
         # Top Bar
         # ----------------------------
         top_bar = ctk.CTkFrame(self, fg_color="transparent")
-        top_bar.pack(fill="x", pady=(10, 0), padx=5)
-        top_bar.grid_columnconfigure(0, weight=1)
-        top_bar.grid_columnconfigure(1, weight=3)
-        top_bar.grid_columnconfigure(2, weight=1)
+        top_bar.pack(fill="x", side="top", pady=(10, 0), padx=5)
+        top_bar.grid_columnconfigure(0, weight=1)  # left spacer
+        top_bar.grid_columnconfigure(1, weight=3)  # title area
+        top_bar.grid_columnconfigure(2, weight=1)  # right spacer
 
-        ctk.CTkButton(
-            top_bar, text="", image=self.master.icons["back"],
-            fg_color="transparent", hover_color=self.master.colour_theme["button_hover"],
-            width=40, height=40,
+        # ← Back Button
+        back_button = ctk.CTkButton(
+            top_bar,
+            text="",
+            image=self.master.icons["back"],
+            text_color=self.master.colour_theme["text_primary"],
+            fg_color="transparent",
+            hover_color=self.master.colour_theme["button_hover"],
+            font=("Ariel", 16),
+            width=40,
+            height=40,
+            corner_radius=8,
             command=self.master.back_to_main_menu
-        ).grid(row=0, column=0, sticky="w")
+        )
+        back_button.grid(row=0, column=0, sticky="w", padx=5)
 
         ctk.CTkLabel(top_bar, text="Yu-Gi-Oh!", font=self.master.fonts["heading"]).grid(row=0, column=1)
 
@@ -77,13 +98,32 @@ class YuGiOhFrame(ctk.CTkFrame):
             command=lambda: self.change_screen(self.show_settings_screen)
         ).grid(row=0, column=2, sticky="e")
 
+
+        # ---------------------------- 
+        # # Reset Button 
+        # # ---------------------------- 
+        reset_button = ctk.CTkButton(
+            self,
+            text="",
+            image=self.master.icons["reset"],
+            fg_color="transparent",
+            hover_color=self.master.colour_theme["button_hover"],
+            font=("Arial", 12),
+            width=40,
+            height=40,
+            corner_radius=8,
+            command=self.lp_controller.reset_all_lp
+        )
+        reset_button.pack(side="top")
+        
+
         # ----------------------------
         # Player Display Area
         # ----------------------------
         player_area = ctk.CTkFrame(self, fg_color="transparent")
-        player_area.pack(pady=20)
+        player_area.pack(pady=5)
 
-        box_w, box_h = 260, 120
+        box_w, box_h = 200, 120
 
         # Player 1 Box
         self.p1_frame = ctk.CTkFrame(
@@ -138,10 +178,129 @@ class YuGiOhFrame(ctk.CTkFrame):
         self.confirm_button.grid(row=2, column=1, pady=10)
         self.confirm_button.configure(state="disabled")
 
+        self.return_bind_id = self.bind("<Return>", self.finish_calc)
+
+        self.select_player(self.select_player)
 
 
 
 
+
+
+    # ---------------------------------
+    # Main Screen Helper Functions
+    # ---------------------------------
+
+    def highlight_selected_op(self):
+        accent = self.master.colour_theme.get("accent", "red")
+
+        for name, btn in (
+            ("damage", self.btn_damage),
+            ("heal",   self.btn_heal),
+            ("halve",  self.btn_halve),
+        ):
+            if getattr(self, "selected_operation", None) == name:
+                btn.configure(
+                    border_width=2,
+                    border_color=accent,
+                    fg_color="transparent"
+                )
+            else:
+                btn.configure(
+                    border_width=0,
+                    border_color="transparent",   # ✅ instead of None
+                    fg_color="transparent"
+                )
+
+    def reset_option_highlight(self):
+        for btn in (self.btn_damage, self.btn_heal, self.btn_halve):
+            btn.configure(border_width=0)
+
+    def highlight_selected_op(self):
+        self.reset_option_highlight()
+        accent = self.master.colour_theme.get("warning", "#FF3B3B")  # pick your accent
+        btn_map = {
+            "damage": self.btn_damage,
+            "heal":   self.btn_heal,
+            "halve":  self.btn_halve,
+        }
+        btn = btn_map.get(self.selected_operation)
+        if btn:
+            # give it a 2px border in your accent color
+            btn.configure(border_width=2, border_color=accent)
+
+    def select_operation(self, op):
+        if not self.selected_player:
+            return
+
+        self.selected_operation = op
+        self.highlight_selected_op()
+
+        if op in ("damage", "heal"):
+            self.calc_entry.delete(0, ctk.END)
+            self.calc_entry.grid()            # show
+            self.calc_entry.focus_set()
+            # make Enter work while typing
+            self.calc_entry.bind("<Return>", lambda e: self.finish_calc())
+            # also bind on the frame so Enter works even if focus moves
+            self.bind("<Return>", lambda e: self.finish_calc())
+        else:
+            # halve: no entry
+            self.calc_entry.grid_remove()
+            # still allow Enter on the frame
+            self.bind("<Return>", lambda e: self.finish_calc())
+
+        self.update_confirm_state()
+
+    def finish_calc(self):
+        if not self.selected_player or not self.selected_operation:
+            return
+
+        player_num = self.selected_player
+        op = self.selected_operation
+
+        if op in ("damage", "heal"):
+            try:
+                value = int(self.calc_entry.get())
+            except ValueError:
+                self.calc_entry.delete(0, ctk.END)
+                self.calc_entry.insert(0, "Invalid")
+                return
+            if op == "damage":
+                self.lp_controller.change_lp(player_num, -abs(value))
+            else:
+                self.lp_controller.change_lp(player_num,  abs(value))
+        elif op == "halve":
+            self.lp_controller.halve_lp(player_num)
+
+        # ---- reset state / UI ----
+        self.selected_player = None
+        self.selected_operation = None
+
+        self.p1_frame.configure(border_width=0)
+        self.p2_frame.configure(border_width=0)
+
+        self.calc_entry.grid_remove()
+
+        self.reset_option_highlight()
+
+        # disable confirm until next selection
+        self.update_confirm_state()
+
+        # clean up Enter bindings
+        try:
+            self.calc_entry.unbind("<Return>")
+        except Exception:
+            pass
+        try:
+            self.unbind("<Return>")
+        except Exception:
+            pass
+
+
+    def update_confirm_state(self):
+        enabled = bool(self.selected_player and self.selected_operation)
+        self.confirm_button.configure(state=("normal" if enabled else "disabled"))
 
 
 
@@ -543,8 +702,16 @@ class YuGiOhFrame(ctk.CTkFrame):
     # Helpers
     # ----------------------------
     def clear_screen(self):
-        for widget in self.winfo_children():
-            widget.destroy()
+        # unbind Enter for this frame if previously bound
+        if hasattr(self, "return_bind_id") and self.return_bind_id:
+            try:
+                self.unbind("<Return>", self.return_bind_id)
+            except Exception:
+                pass
+            self.return_bind_id = None
+
+        for w in self.winfo_children():
+            w.destroy()
 
     def change_screen(self, function):
         self.clear_screen()
@@ -597,81 +764,8 @@ class YuGiOhFrame(ctk.CTkFrame):
         self.lp2_var.set(str(self.game.player2.lp))
 
 
-    def select_operation(self, op):
-        if not self.selected_player:
-            return  # must select player first
 
-        self.pending_operation = op
 
-        # Reset highlighting
-        for btn in [self.btn_damage, self.btn_heal, self.btn_halve]:
-            btn.configure(fg_color="transparent")
-
-        # Highlight selected button
-        if op == "damage":
-            self.btn_damage.configure(fg_color=self.master.colour_theme["button_hover"])
-        elif op == "heal":
-            self.btn_heal.configure(fg_color=self.master.colour_theme["button_hover"])
-        elif op == "halve":
-            self.btn_halve.configure(fg_color=self.master.colour_theme["button_hover"])
-
-        # Show entry only for heal/damage
-        if op in ("damage", "heal"):
-            self.calc_entry.delete(0, ctk.END)
-            self.calc_entry.pack(side="left", padx=10)
-            self.calc_entry.focus()
-        else:
-            self.calc_entry.pack_forget()  # halve requires no input
-
-    def finish_calc(self):
-        if not self.selected_player or not self.selected_operation:
-            return
-
-        player_num = self.selected_player
-        op = self.selected_operation
-
-        # Run operation
-        if op == "damage":
-            try:
-                value = int(self.calc_entry.get())
-                self.lp_controller.change_lp(player_num, -abs(value))
-            except ValueError:
-                self.calc_entry.delete(0, ctk.END)
-                self.calc_entry.insert(0, "Invalid")
-                return
-
-        elif op == "heal":
-            try:
-                value = int(self.calc_entry.get())
-                self.lp_controller.change_lp(player_num, abs(value))
-            except ValueError:
-                self.calc_entry.delete(0, ctk.END)
-                self.calc_entry.insert(0, "Invalid")
-                return
-
-        elif op == "halve":
-            self.lp_controller.halve_lp(player_num)
-
-        # ----------------------------
-        # RESET UI STATE
-        # ----------------------------
-        self.selected_player = None
-        self.selected_operation = None
-
-        # Remove selection highlight
-        self.p1_frame.configure(border_width=0)
-        self.p2_frame.configure(border_width=0)
-
-        # Hide entry box
-        self.calc_entry.grid_remove()
-
-        # Reset operation button highlight
-        self.btn_damage.configure(fg_color="transparent")
-        self.btn_heal.configure(fg_color="transparent")
-        self.btn_halve.configure(fg_color="transparent")
-
-        # Disable confirm button again
-        self.update_confirm_state()
 
 
     def select_player(self, player_num):
@@ -684,27 +778,6 @@ class YuGiOhFrame(ctk.CTkFrame):
 
         self.update_confirm_state()
 
-    def select_operation(self, op):
-        self.selected_operation = op
 
-        # Highlight selected operation
-        self.btn_damage.configure(fg_color=("dodgerblue3" if op=="damage" else "transparent"))
-        self.btn_heal.configure(fg_color=("forestgreen" if op=="heal" else "transparent"))
-        self.btn_halve.configure(fg_color=("goldenrod" if op=="halve" else "transparent"))
 
-        # Show entry only for damage/heal
-        if op in ("damage", "heal"):
-            self.calc_entry.delete(0, ctk.END)
-            self.calc_entry.grid()
-            self.calc_entry.focus_set()
-        else:
-            self.calc_entry.grid_remove()
-
-        self.update_confirm_state()
-
-    def update_confirm_state(self):
-        """Enable confirm only if both player and operation are selected."""
-        if self.selected_player and self.selected_operation:
-            self.confirm_button.configure(state="normal")
-        else:
-            self.confirm_button.configure(state="disabled")
+    

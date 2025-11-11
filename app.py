@@ -121,9 +121,9 @@ class CardGameApp(ctk.CTk):
 
         # Determine target window size
         if FrameClass.__name__ == "MTGFrame":
-            self.geometry("600x415")
+            self.geometry("550x415")
         elif FrameClass.__name__ == "YuGiOhFrame":
-            self.geometry("500x400")
+            self.geometry("500x360")
         else:
             self.geometry("500x400")
 
